@@ -2,39 +2,39 @@ package com.ecomarket.pedidos.controller;
 
 import com.ecomarket.pedidos.entity.ItemCarrito;
 import com.ecomarket.pedidos.service.CarritoService;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/carrito")
+@RequestMapping("/pedidos/carritos") // Ruta alineada con el API Gateway
 public class CarritoController {
 
-    @Autowired
-    private CarritoService service;
+    private final CarritoService service;
 
-    // CA1 y CA2: Agregar producto (stock simulado en 10)
+    public CarritoController(CarritoService service) {
+        this.service = service;
+    }
+
     @PostMapping("/agregar")
-    public String agregar(@RequestBody ItemCarrito item) {
-        return service.agregarProducto(item, 10);
+    public ResponseEntity<ItemCarrito> agregar(@RequestBody ItemCarrito item, @RequestParam int cantidad) {
+        return ResponseEntity.ok(service.agregarProducto(item, cantidad));
     }
 
-    // Listar carrito completo
     @GetMapping
-    public List<ItemCarrito> obtenerCarrito() {
-        return service.listarCarrito();
+    public ResponseEntity<List<ItemCarrito>> listar() {
+        return ResponseEntity.ok(service.listarCarrito());
     }
 
-    // CA3: Actualizar cantidad de un producto por ID
-    @PutMapping("/actualizar/{id}")
-    public String actualizar(@PathVariable Long id, @RequestParam int nuevaCantidad) {
-        return service.actualizarCantidad(id, nuevaCantidad, 10);
+    @PutMapping("/{id}")
+    public ResponseEntity<ItemCarrito> actualizar(@PathVariable Long id, @RequestParam int cantidad) {
+        return ResponseEntity.ok(service.actualizarCantidad(id, cantidad, 0));
     }
 
-    // CA4: Eliminar producto del carrito por ID
-    @DeleteMapping("/eliminar/{id}")
-    public String eliminar(@PathVariable Long id) {
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> eliminar(@PathVariable Long id) {
         service.eliminarProducto(id);
-        return "Producto eliminado del carrito";
+        return ResponseEntity.noContent().build();
     }
 }

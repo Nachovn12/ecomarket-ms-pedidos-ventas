@@ -1,23 +1,24 @@
 package com.ecomarket.pedidos.entity;
 
 import jakarta.persistence.*;
-import lombok.Data;
 
 @Entity
 @Table(name = "items_carrito")
-@Data
 public class ItemCarrito {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
-    private Long productoId;
     private String nombre;
-    private int cantidad;
-    private Double precioUnitario;
+    private Integer cantidad;
+    private Double precio;
 
-    public Double getSubtotal() {
-        return this.precioUnitario * this.cantidad;
-    }
+    // Getters y Setters
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
+    public String getNombre() { return nombre; }
+    public void setNombre(String nombre) { this.nombre = nombre; }
+    public Integer getCantidad() { return cantidad; }
+    public void setCantidad(Integer cantidad) { this.cantidad = cantidad; }
+    public Double getPrecio() { return precio; }
+    public void setPrecio(Double precio) { this.precio = precio; }
 }
