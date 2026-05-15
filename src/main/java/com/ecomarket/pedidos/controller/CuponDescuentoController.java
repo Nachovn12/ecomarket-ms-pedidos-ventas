@@ -25,7 +25,7 @@ public class CuponDescuentoController {
             @Valid @RequestBody AplicarCuponRequest request
     ) {
         Double subtotalSimulado = 10000.0;
-        // AquÃ­ usamos request.getCodigo() que ahora sÃ­ existirÃ¡
+        // Aqui usamos request.getCodigo() que ahora si existira
         AplicarCuponResponse response = cuponDescuentoService.aplicarCupon(request.getCodigo(), subtotalSimulado);
 
         EntityModel<AplicarCuponResponse> model = EntityModel.of(response);
