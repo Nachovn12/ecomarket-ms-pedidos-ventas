@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.*;
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.*;
 
 @RestController
-@RequestMapping("/pedidos")
+@RequestMapping("/api/pedidos")
 public class CuponDescuentoController {
 
     private final CuponDescuentoService cuponDescuentoService;
@@ -25,7 +25,7 @@ public class CuponDescuentoController {
             @Valid @RequestBody AplicarCuponRequest request
     ) {
         Double subtotalSimulado = 10000.0;
-        // Aquí usamos request.getCodigo() que ahora sí existirá
+        // Aqui usamos request.getCodigo() que ahora si existira
         AplicarCuponResponse response = cuponDescuentoService.aplicarCupon(request.getCodigo(), subtotalSimulado);
 
         EntityModel<AplicarCuponResponse> model = EntityModel.of(response);

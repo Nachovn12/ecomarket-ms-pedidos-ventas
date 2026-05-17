@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/pedidos/carritos") // Ruta alineada con el API Gateway
+@RequestMapping("/api/pedidos/carritos") // Ruta alineada con el API Gateway
 public class CarritoController {
 
     private final CarritoService service;
