@@ -9,7 +9,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 public class PedidoService {
@@ -63,29 +62,35 @@ public class PedidoService {
         return pedidoRepository.save(pedido);
     }
 
+    @Transactional(readOnly = true)
     public Pedido obtenerPedido(Long idPedido) {
         return pedidoRepository.findById(idPedido)
                 .orElseThrow(() -> new IllegalArgumentException("Pedido no encontrado: " + idPedido));
     }
 
+    @Transactional(readOnly = true)
     public EstadoPedido consultarEstado(Long idPedido) {
-        return obtenerPedido(idPedido).getEstado();
+        return pedidoRepository.findById(idPedido)
+                .orElseThrow(() -> new IllegalArgumentException("Pedido no encontrado: " + idPedido))
+                .getEstado();
     }
 
+    @Transactional(readOnly = true)
     public List<Pedido> historialCliente(Long idCliente) {
         return pedidoRepository.findByIdClienteOrderByFechaCreacionDesc(idCliente);
     }
 
     @Transactional
     public Pedido cancelarPedido(Long idPedido, String motivo) {
-        Pedido pedido = obtenerPedido(idPedido);
+        Pedido pedido = pedidoRepository.findById(idPedido)
+                .orElseThrow(() -> new IllegalArgumentException("Pedido no encontrado: " + idPedido));
 
         if (pedido.getEstado() != EstadoPedido.PENDIENTE) {
             throw new IllegalArgumentException("Solo se pueden cancelar pedidos en estado PENDIENTE");
         }
 
         pedido.setEstado(EstadoPedido.CANCELADO);
-        pedido.setObservaciones("Cancelado: " + (motivo != null ? motivo : "sin motivo"));
+        pedido.setObservaciones("Cancelado: " + (motivo != null && !motivo.isEmpty() ? motivo : "sin motivo"));
 
         return pedidoRepository.save(pedido);
     }
