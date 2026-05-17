@@ -23,31 +23,31 @@ public class CuponDescuentoService {
 
     public AplicarCuponResponse aplicarCupon(String codigo, Double subtotal) {
         CuponDescuento cupon = cuponDescuentoRepository.findByCodigoIgnoreCase(codigo)
-                .orElseThrow(() -> new IllegalArgumentException("Cupón inválido: el código no existe"));
+                .orElseThrow(() -> new IllegalArgumentException("Cupon invalido: el codigo no existe"));
 
         validarCupon(cupon, subtotal);
 
         Double descuento = calcularDescuento(cupon, subtotal);
-        Double totalFinal = Math.max(0, subtotal - descuento);
+        Double totalFinal = Math.max(0.0, subtotal - descuento);
 
         return new AplicarCuponResponse(
                 cupon.getCodigo(),
                 subtotal,
                 descuento,
                 totalFinal,
-                "Cupón aplicado correctamente"
+                "Cupon aplicado correctamente"
         );
     }
 
     private void validarCupon(CuponDescuento cupon, Double subtotal) {
         if (Boolean.FALSE.equals(cupon.getActivo())) {
-            throw new IllegalArgumentException("Cupón inválido: el cupón está deshabilitado");
+            throw new IllegalArgumentException("Cupon invalido: el cupon esta deshabilitado");
         }
-        if (cupon.getFechaVencimiento().isBefore(LocalDate.now())) {
-            throw new IllegalArgumentException("Cupón vencido: la fecha de expiración fue " + cupon.getFechaVencimiento());
+        if (cupon.getFechaVencimiento() != null && cupon.getFechaVencimiento().isBefore(LocalDate.now())) {
+            throw new IllegalArgumentException("Cupon vencido: la fecha de expiracion fue " + cupon.getFechaVencimiento());
         }
         if (cupon.getMontoMinimo() != null && subtotal < cupon.getMontoMinimo()) {
-            throw new IllegalArgumentException("El carrito no cumple el monto mínimo para este cupón");
+            throw new IllegalArgumentException("El carrito no cumple el monto minimo para este cupon");
         }
     }
 
@@ -56,7 +56,7 @@ public class CuponDescuentoService {
             return subtotal * (cupon.getValorDescuento() / 100);
         }
         if (cupon.getTipoDescuento() == TipoDescuento.MONTO_FIJO) {
-            return cupon.getValorDescuento();
+            return Math.min(cupon.getValorDescuento(), subtotal);
         }
         throw new IllegalArgumentException("Tipo de descuento no soportado");
     }

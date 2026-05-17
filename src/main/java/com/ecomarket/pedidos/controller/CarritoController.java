@@ -1,40 +1,97 @@
 package com.ecomarket.pedidos.controller;
 
-import com.ecomarket.pedidos.entity.ItemCarrito;
+import com.ecomarket.pedidos.dto.ActualizarCantidadRequest;
+import com.ecomarket.pedidos.dto.AgregarItemCarritoRequest;
+import com.ecomarket.pedidos.dto.AplicarCuponRequest;
+import com.ecomarket.pedidos.dto.AplicarCuponResponse;
+import com.ecomarket.pedidos.dto.CrearCarritoRequest;
+import com.ecomarket.pedidos.entity.CarritoCompra;
 import com.ecomarket.pedidos.service.CarritoService;
+import jakarta.validation.Valid;
+import org.springframework.hateoas.CollectionModel;
+import org.springframework.hateoas.EntityModel;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.stream.Collectors;
+
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.*;
 
 @RestController
-@RequestMapping("/api/pedidos/carritos") // Ruta alineada con el API Gateway
+@RequestMapping("/api/pedidos/carritos")
 public class CarritoController {
 
-    private final CarritoService service;
+    private final CarritoService carritoService;
 
-    public CarritoController(CarritoService service) {
-        this.service = service;
+    public CarritoController(CarritoService carritoService) {
+        this.carritoService = carritoService;
     }
 
-    @PostMapping("/agregar")
-    public ResponseEntity<ItemCarrito> agregar(@RequestBody ItemCarrito item, @RequestParam int cantidad) {
-        return ResponseEntity.ok(service.agregarProducto(item, cantidad));
+    @PostMapping
+    public ResponseEntity<EntityModel<CarritoCompra>> crearCarrito(@Valid @RequestBody CrearCarritoRequest request) {
+        CarritoCompra carrito = carritoService.crearCarrito(request.getIdCliente());
+        return ResponseEntity.status(HttpStatus.CREATED).body(toModel(carrito));
     }
 
     @GetMapping
-    public ResponseEntity<List<ItemCarrito>> listar() {
-        return ResponseEntity.ok(service.listarCarrito());
+    public ResponseEntity<CollectionModel<EntityModel<CarritoCompra>>> listarCarritos() {
+        List<EntityModel<CarritoCompra>> carritos = carritoService.listarCarritos()
+                .stream()
+                .map(this::toModel)
+                .collect(Collectors.toList());
+        CollectionModel<EntityModel<CarritoCompra>> collection = CollectionModel.of(carritos);
+        collection.add(linkTo(methodOn(CarritoController.class).listarCarritos()).withSelfRel());
+        return ResponseEntity.ok(collection);
     }
 
-    @PutMapping("/{id}")
-    public ResponseEntity<ItemCarrito> actualizar(@PathVariable Long id, @RequestParam int cantidad) {
-        return ResponseEntity.ok(service.actualizarCantidad(id, cantidad, 0));
+    @GetMapping("/{idCarrito}")
+    public ResponseEntity<EntityModel<CarritoCompra>> obtenerCarrito(@PathVariable Long idCarrito) {
+        CarritoCompra carrito = carritoService.obtenerCarrito(idCarrito);
+        return ResponseEntity.ok(toModel(carrito));
     }
 
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> eliminar(@PathVariable Long id) {
-        service.eliminarProducto(id);
-        return ResponseEntity.noContent().build();
+    @PostMapping("/{idCarrito}/items")
+    public ResponseEntity<EntityModel<CarritoCompra>> agregarItem(
+            @PathVariable Long idCarrito,
+            @Valid @RequestBody AgregarItemCarritoRequest request) {
+        CarritoCompra carrito = carritoService.agregarItem(idCarrito, request);
+        return ResponseEntity.ok(toModel(carrito));
+    }
+
+    @PutMapping("/{idCarrito}/items/{idItem}")
+    public ResponseEntity<EntityModel<CarritoCompra>> actualizarCantidad(
+            @PathVariable Long idCarrito,
+            @PathVariable Long idItem,
+            @Valid @RequestBody ActualizarCantidadRequest request) {
+        CarritoCompra carrito = carritoService.actualizarCantidad(idCarrito, idItem, request);
+        return ResponseEntity.ok(toModel(carrito));
+    }
+
+    @DeleteMapping("/{idCarrito}/items/{idItem}")
+    public ResponseEntity<EntityModel<CarritoCompra>> eliminarItem(
+            @PathVariable Long idCarrito,
+            @PathVariable Long idItem) {
+        CarritoCompra carrito = carritoService.eliminarItem(idCarrito, idItem);
+        return ResponseEntity.ok(toModel(carrito));
+    }
+
+    @PostMapping("/{idCarrito}/cupon")
+    public ResponseEntity<EntityModel<AplicarCuponResponse>> aplicarCupon(
+            @PathVariable Long idCarrito,
+            @Valid @RequestBody AplicarCuponRequest request) {
+        AplicarCuponResponse response = carritoService.aplicarCupon(idCarrito, request.getCodigo());
+        EntityModel<AplicarCuponResponse> model = EntityModel.of(response);
+        model.add(linkTo(methodOn(CarritoController.class).aplicarCupon(idCarrito, request)).withSelfRel());
+        model.add(linkTo(methodOn(CarritoController.class).obtenerCarrito(idCarrito)).withRel("carrito"));
+        return ResponseEntity.ok(model);
+    }
+
+    private EntityModel<CarritoCompra> toModel(CarritoCompra carrito) {
+        EntityModel<CarritoCompra> model = EntityModel.of(carrito);
+        model.add(linkTo(methodOn(CarritoController.class).obtenerCarrito(carrito.getIdCarrito())).withSelfRel());
+        model.add(linkTo(methodOn(CarritoController.class).listarCarritos()).withRel("carritos"));
+        return model;
     }
 }
