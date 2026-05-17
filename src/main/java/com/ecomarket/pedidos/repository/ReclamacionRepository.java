@@ -1,0 +1,9 @@
+package com.ecomarket.pedidos.repository;
+
+import com.ecomarket.pedidos.entity.Reclamacion;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+@Repository
+public interface ReclamacionRepository extends JpaRepository<Reclamacion, Long> {
+}
