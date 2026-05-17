@@ -1,15 +1,22 @@
 package com.ecomarket.pedidos.controller;
 
+import com.ecomarket.pedidos.dto.CrearDevolucionRequest;
 import com.ecomarket.pedidos.dto.CrearFacturaRequest;
 import com.ecomarket.pedidos.dto.CrearVentaRequest;
+import com.ecomarket.pedidos.entity.Devolucion;
 import com.ecomarket.pedidos.entity.Factura;
 import com.ecomarket.pedidos.entity.Venta;
+import com.ecomarket.pedidos.service.DevolucionService;
 import com.ecomarket.pedidos.service.VentaService;
 import jakarta.validation.Valid;
+import org.springframework.hateoas.CollectionModel;
 import org.springframework.hateoas.EntityModel;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+import java.util.stream.Collectors;
 
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.*;
 
@@ -18,9 +25,11 @@ import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.*;
 public class VentaController {
 
     private final VentaService ventaService;
+    private final DevolucionService devolucionService;
 
-    public VentaController(VentaService ventaService) {
+    public VentaController(VentaService ventaService, DevolucionService devolucionService) {
         this.ventaService = ventaService;
+        this.devolucionService = devolucionService;
     }
 
     @PostMapping("/presencial")
@@ -33,6 +42,22 @@ public class VentaController {
         return ResponseEntity.status(HttpStatus.CREATED).body(model);
     }
 
+    @GetMapping
+    public ResponseEntity<CollectionModel<EntityModel<Venta>>> listarVentas() {
+        List<EntityModel<Venta>> ventas = ventaService.listarVentas()
+                .stream()
+                .map(v -> {
+                    EntityModel<Venta> model = EntityModel.of(v);
+                    model.add(linkTo(methodOn(VentaController.class)
+                            .obtenerVenta(v.getIdVenta())).withSelfRel());
+                    return model;
+                })
+                .collect(Collectors.toList());
+        CollectionModel<EntityModel<Venta>> collection = CollectionModel.of(ventas);
+        collection.add(linkTo(methodOn(VentaController.class).listarVentas()).withSelfRel());
+        return ResponseEntity.ok(collection);
+    }
+
     @GetMapping("/{idVenta}")
     public ResponseEntity<EntityModel<Venta>> obtenerVenta(@PathVariable Long idVenta) {
         Venta venta = ventaService.obtenerVenta(idVenta);
@@ -40,6 +65,23 @@ public class VentaController {
         model.add(linkTo(methodOn(VentaController.class)
                 .obtenerVenta(idVenta)).withSelfRel());
         return ResponseEntity.ok(model);
+    }
+
+    @PutMapping("/{idVenta}")
+    public ResponseEntity<EntityModel<Venta>> actualizarVenta(
+            @PathVariable Long idVenta,
+            @Valid @RequestBody CrearVentaRequest request) {
+        Venta venta = ventaService.actualizarVenta(idVenta, request);
+        EntityModel<Venta> model = EntityModel.of(venta);
+        model.add(linkTo(methodOn(VentaController.class)
+                .obtenerVenta(idVenta)).withSelfRel());
+        return ResponseEntity.ok(model);
+    }
+
+    @DeleteMapping("/{idVenta}")
+    public ResponseEntity<Void> eliminarVenta(@PathVariable Long idVenta) {
+        ventaService.eliminarVenta(idVenta);
+        return ResponseEntity.noContent().build();
     }
 
     @PostMapping("/{idVenta}/factura")
@@ -61,5 +103,17 @@ public class VentaController {
         model.add(linkTo(methodOn(VentaController.class)
                 .obtenerFactura(idFactura)).withSelfRel());
         return ResponseEntity.ok(model);
+    }
+
+    @PostMapping("/{idVenta}/devoluciones")
+    public ResponseEntity<EntityModel<Devolucion>> crearDevolucionPorVenta(
+            @PathVariable Long idVenta,
+            @Valid @RequestBody CrearDevolucionRequest request) {
+        request.setIdVenta(idVenta);
+        Devolucion devolucion = devolucionService.crearDevolucion(request);
+        EntityModel<Devolucion> model = EntityModel.of(devolucion);
+        model.add(linkTo(methodOn(VentaController.class)
+                .obtenerVenta(idVenta)).withRel("venta"));
+        return ResponseEntity.status(HttpStatus.CREATED).body(model);
     }
 }

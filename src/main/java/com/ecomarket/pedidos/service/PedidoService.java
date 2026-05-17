@@ -1,10 +1,13 @@
 package com.ecomarket.pedidos.service;
 
 import com.ecomarket.pedidos.dto.CrearPedidoRequest;
+import com.ecomarket.pedidos.dto.CrearReclamacionRequest;
 import com.ecomarket.pedidos.dto.PedidoResponse;
 import com.ecomarket.pedidos.entity.*;
 import com.ecomarket.pedidos.repository.CarritoCompraRepository;
+import com.ecomarket.pedidos.repository.HistorialPedidoRepository;
 import com.ecomarket.pedidos.repository.PedidoRepository;
+import com.ecomarket.pedidos.repository.ReclamacionRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -15,11 +18,17 @@ public class PedidoService {
 
     private final PedidoRepository pedidoRepository;
     private final CarritoCompraRepository carritoCompraRepository;
+    private final HistorialPedidoRepository historialPedidoRepository;
+    private final ReclamacionRepository reclamacionRepository;
 
     public PedidoService(PedidoRepository pedidoRepository,
-                         CarritoCompraRepository carritoCompraRepository) {
+                         CarritoCompraRepository carritoCompraRepository,
+                         HistorialPedidoRepository historialPedidoRepository,
+                         ReclamacionRepository reclamacionRepository) {
         this.pedidoRepository = pedidoRepository;
         this.carritoCompraRepository = carritoCompraRepository;
+        this.historialPedidoRepository = historialPedidoRepository;
+        this.reclamacionRepository = reclamacionRepository;
     }
 
     @Transactional
@@ -59,13 +68,35 @@ public class PedidoService {
         carrito.setEstado(EstadoCarrito.CONVERTIDO);
         carritoCompraRepository.save(carrito);
 
-        return pedidoRepository.save(pedido);
+        Pedido pedidoGuardado = pedidoRepository.save(pedido);
+        registrarHistorial(pedidoGuardado.getIdPedido(), null, EstadoPedido.PENDIENTE, "Pedido creado desde carrito");
+        return pedidoGuardado;
+    }
+
+    @Transactional(readOnly = true)
+    public List<Pedido> listarPedidos() {
+        return pedidoRepository.findAll();
     }
 
     @Transactional(readOnly = true)
     public Pedido obtenerPedido(Long idPedido) {
         return pedidoRepository.findById(idPedido)
                 .orElseThrow(() -> new IllegalArgumentException("Pedido no encontrado: " + idPedido));
+    }
+
+    @Transactional
+    public Pedido actualizarPedido(Long idPedido, CrearPedidoRequest request) {
+        Pedido pedido = obtenerPedido(idPedido);
+        pedido.setMetodoPago(request.getMetodoPago());
+        pedido.setDireccionEntrega(request.getDireccionEntrega());
+        pedido.setObservaciones(request.getObservaciones());
+        return pedidoRepository.save(pedido);
+    }
+
+    @Transactional
+    public void eliminarPedido(Long idPedido) {
+        Pedido pedido = obtenerPedido(idPedido);
+        pedidoRepository.delete(pedido);
     }
 
     @Transactional(readOnly = true)
@@ -89,10 +120,46 @@ public class PedidoService {
             throw new IllegalArgumentException("Solo se pueden cancelar pedidos en estado PENDIENTE");
         }
 
+        EstadoPedido estadoAnterior = pedido.getEstado();
         pedido.setEstado(EstadoPedido.CANCELADO);
         pedido.setObservaciones("Cancelado: " + (motivo != null && !motivo.isEmpty() ? motivo : "sin motivo"));
 
-        return pedidoRepository.save(pedido);
+        Pedido pedidoGuardado = pedidoRepository.save(pedido);
+        registrarHistorial(idPedido, estadoAnterior, EstadoPedido.CANCELADO, "Pedido cancelado");
+        return pedidoGuardado;
+    }
+
+    @Transactional
+    public void registrarHistorial(Long idPedido, EstadoPedido estadoAnterior,
+                                   EstadoPedido estadoNuevo, String descripcion) {
+        HistorialPedido historial = new HistorialPedido();
+        historial.setIdPedido(idPedido);
+        historial.setEstadoAnterior(estadoAnterior);
+        historial.setEstadoNuevo(estadoNuevo);
+        historial.setDescripcion(descripcion);
+        historialPedidoRepository.save(historial);
+    }
+
+    @Transactional(readOnly = true)
+    public List<HistorialPedido> listarHistorialPedido(Long idPedido) {
+        return historialPedidoRepository.findByIdPedidoOrderByFechaCambioDesc(idPedido);
+    }
+
+    @Transactional
+    public Reclamacion crearReclamacionPorPedido(Long idPedido, CrearReclamacionRequest request) {
+        obtenerPedido(idPedido);
+        Reclamacion reclamacion = new Reclamacion();
+        reclamacion.setIdCliente(request.getIdCliente());
+        reclamacion.setIdPedido(idPedido);
+        reclamacion.setIdVenta(request.getIdVenta());
+        reclamacion.setMotivo(request.getMotivo());
+        reclamacion.setDescripcion(request.getDescripcion());
+        return reclamacionRepository.save(reclamacion);
+    }
+
+    @Transactional(readOnly = true)
+    public List<Reclamacion> listarReclamacionesPorPedido(Long idPedido) {
+        return reclamacionRepository.findByIdPedido(idPedido);
     }
 
     public PedidoResponse toResponse(Pedido pedido) {

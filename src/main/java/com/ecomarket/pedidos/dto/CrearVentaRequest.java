@@ -1,8 +1,12 @@
 package com.ecomarket.pedidos.dto;
 
 import com.ecomarket.pedidos.entity.MetodoPago;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
+
+import java.util.List;
 
 @Data
 public class CrearVentaRequest {
@@ -15,10 +19,11 @@ public class CrearVentaRequest {
     @NotNull(message = "El metodoPago es obligatorio")
     private MetodoPago metodoPago;
 
-    @NotNull(message = "El total es obligatorio")
-    private Double total;
+    @NotNull(message = "Los items de venta son obligatorios")
+    @NotEmpty(message = "Debe incluir al menos un item")
+    @Valid
+    private List<ItemVentaRequest> items;
 
-    private Double subtotal;
     private Double descuento;
     private String observaciones;
 }
