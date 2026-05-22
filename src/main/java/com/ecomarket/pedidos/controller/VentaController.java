@@ -1,12 +1,9 @@
 package com.ecomarket.pedidos.controller;
 
-import com.ecomarket.pedidos.dto.CrearDevolucionRequest;
 import com.ecomarket.pedidos.dto.CrearFacturaRequest;
 import com.ecomarket.pedidos.dto.CrearVentaRequest;
-import com.ecomarket.pedidos.entity.Devolucion;
 import com.ecomarket.pedidos.entity.Factura;
 import com.ecomarket.pedidos.entity.Venta;
-import com.ecomarket.pedidos.service.DevolucionService;
 import com.ecomarket.pedidos.service.VentaService;
 import jakarta.validation.Valid;
 import org.springframework.hateoas.CollectionModel;
@@ -25,11 +22,9 @@ import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.*;
 public class VentaController {
 
     private final VentaService ventaService;
-    private final DevolucionService devolucionService;
 
-    public VentaController(VentaService ventaService, DevolucionService devolucionService) {
+    public VentaController(VentaService ventaService) {
         this.ventaService = ventaService;
-        this.devolucionService = devolucionService;
     }
 
     @PostMapping("/presencial")
@@ -103,17 +98,5 @@ public class VentaController {
         model.add(linkTo(methodOn(VentaController.class)
                 .obtenerFactura(idFactura)).withSelfRel());
         return ResponseEntity.ok(model);
-    }
-
-    @PostMapping("/{idVenta}/devoluciones")
-    public ResponseEntity<EntityModel<Devolucion>> crearDevolucionPorVenta(
-            @PathVariable Long idVenta,
-            @Valid @RequestBody CrearDevolucionRequest request) {
-        request.setIdVenta(idVenta);
-        Devolucion devolucion = devolucionService.crearDevolucion(request);
-        EntityModel<Devolucion> model = EntityModel.of(devolucion);
-        model.add(linkTo(methodOn(VentaController.class)
-                .obtenerVenta(idVenta)).withRel("venta"));
-        return ResponseEntity.status(HttpStatus.CREATED).body(model);
     }
 }
