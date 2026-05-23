@@ -40,7 +40,6 @@
 ```json
 {
   "idCliente": 1,
-  "idVenta": 1,
   "motivo": "Producto defectuoso"
 }
 ```
@@ -124,6 +123,6 @@
 
 Las capturas reales de Postman deben adjuntarse en Miro o en la carpeta de evidencias del equipo para respaldar la ejecución de estos endpoints durante la defensa.
 
-## 9. Alcance académico
+## Alcance académico
 
 Este documento es de carácter académico. La integración con el SII no está implementada. La entidad Factura representa el concepto dentro del sistema EcoMarket SPA.
