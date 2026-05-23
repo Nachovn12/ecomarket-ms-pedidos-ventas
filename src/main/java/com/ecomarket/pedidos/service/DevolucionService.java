@@ -47,25 +47,14 @@ public class DevolucionService {
         log.info("Buscando devolución con id {}", id);
         return devolucionRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(
-                        HttpStatus.NOT_FOUND, 
-                        "Devolución no encontrada con id: " + id
-                ));
-    }
-
-    private void validarEstadoDevolucion(String estado) {
-        List<String> permitidos = List.of("SOLICITADA", "APROBADA", "RECHAZADA", "FINALIZADA");
-        if (!permitidos.contains(estado.toUpperCase())) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Estado de devolución inválido");
-        }
+                        HttpStatus.NOT_FOUND, "Devolución no encontrada: " + id));
     }
 
     public Devolucion actualizarEstadoDevolucion(Long id, String estado) {
         log.info("Actualizando estado de devolución {} a {}", id, estado);
         Devolucion devolucion = obtenerDevolucion(id);
-        
-        validarEstadoDevolucion(estado);
-        devolucion.setEstado(estado.toUpperCase());
-        
+        String estadoNormalizado = normalizarEstadoDevolucion(estado);
+        devolucion.setEstado(estadoNormalizado);
         return devolucionRepository.save(devolucion);
     }
 
@@ -89,25 +78,42 @@ public class DevolucionService {
         log.info("Buscando reclamación con id {}", id);
         return reclamacionRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(
-                        HttpStatus.NOT_FOUND, 
-                        "Reclamación no encontrada con id: " + id
-                ));
-    }
-
-    private void validarEstadoReclamacion(String estado) {
-        List<String> permitidos = List.of("ABIERTA", "EN_REVISION", "RESUELTA", "CERRADA");
-        if (!permitidos.contains(estado.toUpperCase())) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Estado de reclamación inválido");
-        }
+                        HttpStatus.NOT_FOUND, "Reclamación no encontrada: " + id));
     }
 
     public Reclamacion actualizarEstadoReclamacion(Long id, String estado) {
         log.info("Actualizando estado de reclamación {} a {}", id, estado);
         Reclamacion reclamacion = obtenerReclamacion(id);
-        
-        validarEstadoReclamacion(estado);
-        reclamacion.setEstado(estado.toUpperCase());
-        
+        String estadoNormalizado = normalizarEstadoReclamacion(estado);
+        reclamacion.setEstado(estadoNormalizado);
         return reclamacionRepository.save(reclamacion);
+    }
+
+    private String normalizarEstadoDevolucion(String estado) {
+        if (estado == null || estado.isBlank()) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST, "El estado de devolución es obligatorio");
+        }
+        String estadoNormalizado = estado.trim().toUpperCase();
+        List<String> permitidos = List.of("SOLICITADA", "APROBADA", "RECHAZADA", "FINALIZADA");
+        if (!permitidos.contains(estadoNormalizado)) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST, "Estado de devolución inválido");
+        }
+        return estadoNormalizado;
+    }
+
+    private String normalizarEstadoReclamacion(String estado) {
+        if (estado == null || estado.isBlank()) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST, "El estado de reclamación es obligatorio");
+        }
+        String estadoNormalizado = estado.trim().toUpperCase();
+        List<String> permitidos = List.of("ABIERTA", "EN_REVISION", "RESUELTA", "CERRADA");
+        if (!permitidos.contains(estadoNormalizado)) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST, "Estado de reclamación inválido");
+        }
+        return estadoNormalizado;
     }
 }
