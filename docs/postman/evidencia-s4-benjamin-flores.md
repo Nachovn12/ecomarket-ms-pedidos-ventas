@@ -1,113 +1,124 @@
 # Evidencia Postman — Sprint S4 — Benjamín Flores Arévalo
 
 ## Endpoint 1
-
-- HU: HU-12
-- Método: GET
-- URL: http://localhost:8084/api/pedidos/{idPedido}/estado
-- Body: N/A
-- Código esperado: 200
-- Código obtenido: 200
-- Resultado: OK — retorna estado actual del pedido
+- **HU:** HU-12
+- **Método:** GET
+- **URL:** `http://localhost:8084/api/pedidos/{idPedido}/estado`
+- **Body:** N/A
+- **Código esperado:** 200
+- **Código obtenido:** 200
+- **Resultado:** OK — retorna estado actual del pedido
 
 ## Endpoint 2
-
-- HU: HU-12
-- Método: GET
-- URL: http://localhost:8084/api/pedidos/clientes/{idCliente}/historial
-- Body: N/A
-- Código esperado: 200
-- Código obtenido: 200
-- Resultado: OK — retorna lista de pedidos del cliente
+- **HU:** HU-12
+- **Método:** GET
+- **URL:** `http://localhost:8084/api/pedidos/clientes/{idCliente}/historial`
+- **Body:** N/A
+- **Código esperado:** 200
+- **Código obtenido:** 200
+- **Resultado:** OK — retorna lista de pedidos del cliente
 
 ## Endpoint 3
-
-- HU: HU-12
-- Método: GET
-- URL: http://localhost:8084/api/pedidos/{idPedido}/historial
-- Body: N/A
-- Código esperado: 200
-- Código obtenido: 200
-- Resultado: OK — retorna historial de estados del pedido
+- **HU:** HU-12
+- **Método:** GET
+- **URL:** `http://localhost:8084/api/pedidos/{idPedido}/historial`
+- **Body:** N/A
+- **Código esperado:** 200
+- **Código obtenido:** 200
+- **Resultado:** OK — retorna historial de estados del pedido
 
 ## Endpoint 4
-
-- HU: HU-15
-- Método: POST
-- URL: http://localhost:8084/api/ventas/{idVenta}/devoluciones
-- Body:
+- **HU:** HU-15
+- **Método:** POST
+- **URL:** `http://localhost:8084/api/ventas/{idVenta}/devoluciones`
+- **Body:**
 ```json
 {
   "idCliente": 1,
   "idVenta": 1,
   "motivo": "Producto defectuoso"
 }
-```
-- Código esperado: 201
-- Código obtenido: 201
-- Resultado: OK — devolución registrada correctamente
+Código esperado: 201
 
-## Endpoint 5
+Código obtenido: 201
 
-- HU: HU-15
-- Método: PATCH
-- URL: http://localhost:8084/api/devoluciones/{id}/estado
-- Body:
-```json
+Resultado: OK — devolución registrada correctamente
+
+Endpoint 5
+HU: HU-15
+
+Método: PATCH
+
+URL: http://localhost:8084/api/devoluciones/{id}/estado
+
+Body:
+
+JSON
 {
   "estado": "APROBADA"
 }
-```
-- Código esperado: 200
-- Código obtenido: 200
-- Resultado: OK — estado de devolución actualizado
+Código esperado: 200
 
-## Endpoint 6
+Código obtenido: 200
 
-- HU: HU-15
-- Método: POST
-- URL: http://localhost:8084/api/reclamaciones
-- Body:
-```json
+Resultado: OK — estado de devolución actualizado
+
+Endpoint 6
+HU: HU-15
+
+Método: POST
+
+URL: http://localhost:8084/api/reclamaciones
+
+Body:
+
+JSON
 {
   "idCliente": 1,
   "idPedido": 1,
   "motivo": "Pedido incompleto",
   "descripcion": "Faltaron 2 productos"
 }
-```
-- Código esperado: 201
-- Código obtenido: 201
-- Resultado: OK — reclamación registrada correctamente
+Código esperado: 201
 
-## Endpoint 7
+Código obtenido: 201
 
-- HU: HU-15
-- Método: PATCH
-- URL: http://localhost:8084/api/reclamaciones/{id}/estado
-- Body:
-```json
+Resultado: OK — reclamación registrada correctamente
+
+Endpoint 7
+HU: HU-15
+
+Método: PATCH
+
+URL: http://localhost:8084/api/reclamaciones/{id}/estado
+
+Body:
+
+JSON
 {
   "estado": "CERRADA"
 }
-```
-- Código esperado: 200
-- Código obtenido: 200
-- Resultado: OK — estado de reclamación actualizado
-### Ejemplo Request/Response: Estado Inválido
-**PATCH** `/api/devoluciones/1/estado`
+Código esperado: 200
 
-**Body:**
-```json
+Código obtenido: 200
+
+Resultado: OK — estado de reclamación actualizado
+
+Endpoint 8 (Caso de Error)
+HU: HU-15
+
+Método: PATCH
+
+URL: http://localhost:8084/api/devoluciones/1/estado
+
+Body:
+
+JSON
 {
  "estado": "INVALIDO"
 }
+Código esperado: 400
 
-### Ejemplo Request/Response: Estado Inválido
-**PATCH** `/api/devoluciones/1/estado`
+Código obtenido: 400
 
-**Body:**
-```json
-{
-  "estado": "INVALIDO"
-}
+Resultado: Error 400 — "Estado de devolución inválido"
