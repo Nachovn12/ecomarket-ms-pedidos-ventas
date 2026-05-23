@@ -94,3 +94,20 @@
 - Código esperado: 200
 - Código obtenido: 200
 - Resultado: OK — estado de reclamación actualizado
+### Ejemplo Request/Response: Estado Inválido
+**PATCH** `/api/devoluciones/1/estado`
+
+**Body:**
+```json
+{
+ "estado": "INVALIDO"
+}
+
+### Ejemplo Request/Response: Estado Inválido
+**PATCH** `/api/devoluciones/1/estado`
+
+**Body:**
+```json
+{
+  "estado": "INVALIDO"
+}

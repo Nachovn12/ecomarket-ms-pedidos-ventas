@@ -55,3 +55,6 @@ Documentar el flujo desde carrito hasta factura, incluyendo venta presencial, cu
 - HU-12 Consulta de estado del pedido.
 - HU-15 Atención de devoluciones y reclamaciones.
 - HU-57 Documentación del flujo comercial.
+## 9. Alcance académico
+
+En esta entrega, la facturación electrónica se representa como un flujo interno del microservicio MS Pedidos y Ventas. No se realiza integración real con servicios externos del SII. La finalidad es demostrar el diseño, persistencia, validación y exposición REST de la funcionalidad dentro del contexto académico.

@@ -8,7 +8,9 @@ import com.ecomarket.pedidos.repository.DevolucionRepository;
 import com.ecomarket.pedidos.repository.ReclamacionRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 
@@ -44,13 +46,26 @@ public class DevolucionService {
     public Devolucion obtenerDevolucion(Long id) {
         log.info("Buscando devolución con id {}", id);
         return devolucionRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Devolución no encontrada: " + id));
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND, 
+                        "Devolución no encontrada con id: " + id
+                ));
+    }
+
+    private void validarEstadoDevolucion(String estado) {
+        List<String> permitidos = List.of("SOLICITADA", "APROBADA", "RECHAZADA", "FINALIZADA");
+        if (!permitidos.contains(estado.toUpperCase())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Estado de devolución inválido");
+        }
     }
 
     public Devolucion actualizarEstadoDevolucion(Long id, String estado) {
         log.info("Actualizando estado de devolución {} a {}", id, estado);
         Devolucion devolucion = obtenerDevolucion(id);
-        devolucion.setEstado(estado);
+        
+        validarEstadoDevolucion(estado);
+        devolucion.setEstado(estado.toUpperCase());
+        
         return devolucionRepository.save(devolucion);
     }
 
@@ -73,13 +88,26 @@ public class DevolucionService {
     public Reclamacion obtenerReclamacion(Long id) {
         log.info("Buscando reclamación con id {}", id);
         return reclamacionRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Reclamación no encontrada: " + id));
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND, 
+                        "Reclamación no encontrada con id: " + id
+                ));
+    }
+
+    private void validarEstadoReclamacion(String estado) {
+        List<String> permitidos = List.of("ABIERTA", "EN_REVISION", "RESUELTA", "CERRADA");
+        if (!permitidos.contains(estado.toUpperCase())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Estado de reclamación inválido");
+        }
     }
 
     public Reclamacion actualizarEstadoReclamacion(Long id, String estado) {
         log.info("Actualizando estado de reclamación {} a {}", id, estado);
         Reclamacion reclamacion = obtenerReclamacion(id);
-        reclamacion.setEstado(estado);
+        
+        validarEstadoReclamacion(estado);
+        reclamacion.setEstado(estado.toUpperCase());
+        
         return reclamacionRepository.save(reclamacion);
     }
 }
