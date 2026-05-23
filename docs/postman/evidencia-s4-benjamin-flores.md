@@ -1,124 +1,129 @@
 # Evidencia Postman — Sprint S4 — Benjamín Flores Arévalo
 
 ## Endpoint 1
+
 - **HU:** HU-12
 - **Método:** GET
 - **URL:** `http://localhost:8084/api/pedidos/{idPedido}/estado`
 - **Body:** N/A
 - **Código esperado:** 200
 - **Código obtenido:** 200
-- **Resultado:** OK — retorna estado actual del pedido
+- **Resultado:** OK — retorna estado actual del pedido.
 
 ## Endpoint 2
+
 - **HU:** HU-12
 - **Método:** GET
 - **URL:** `http://localhost:8084/api/pedidos/clientes/{idCliente}/historial`
 - **Body:** N/A
 - **Código esperado:** 200
 - **Código obtenido:** 200
-- **Resultado:** OK — retorna lista de pedidos del cliente
+- **Resultado:** OK — retorna lista de pedidos del cliente.
 
 ## Endpoint 3
+
 - **HU:** HU-12
 - **Método:** GET
 - **URL:** `http://localhost:8084/api/pedidos/{idPedido}/historial`
 - **Body:** N/A
 - **Código esperado:** 200
 - **Código obtenido:** 200
-- **Resultado:** OK — retorna historial de estados del pedido
+- **Resultado:** OK — retorna historial de estados del pedido.
 
 ## Endpoint 4
+
 - **HU:** HU-15
 - **Método:** POST
 - **URL:** `http://localhost:8084/api/ventas/{idVenta}/devoluciones`
 - **Body:**
+
 ```json
 {
   "idCliente": 1,
   "idVenta": 1,
   "motivo": "Producto defectuoso"
 }
-Código esperado: 201
+```
 
-Código obtenido: 201
+- **Código esperado:** 201
+- **Código obtenido:** 201
+- **Resultado:** OK — devolución registrada correctamente.
 
-Resultado: OK — devolución registrada correctamente
+## Endpoint 5
 
-Endpoint 5
-HU: HU-15
+- **HU:** HU-15
+- **Método:** PATCH
+- **URL:** `http://localhost:8084/api/devoluciones/{id}/estado`
+- **Body:**
 
-Método: PATCH
-
-URL: http://localhost:8084/api/devoluciones/{id}/estado
-
-Body:
-
-JSON
+```json
 {
   "estado": "APROBADA"
 }
-Código esperado: 200
+```
 
-Código obtenido: 200
+- **Código esperado:** 200
+- **Código obtenido:** 200
+- **Resultado:** OK — estado de devolución actualizado.
 
-Resultado: OK — estado de devolución actualizado
+## Endpoint 6
 
-Endpoint 6
-HU: HU-15
+- **HU:** HU-15
+- **Método:** POST
+- **URL:** `http://localhost:8084/api/reclamaciones`
+- **Body:**
 
-Método: POST
-
-URL: http://localhost:8084/api/reclamaciones
-
-Body:
-
-JSON
+```json
 {
   "idCliente": 1,
   "idPedido": 1,
   "motivo": "Pedido incompleto",
   "descripcion": "Faltaron 2 productos"
 }
-Código esperado: 201
+```
 
-Código obtenido: 201
+- **Código esperado:** 201
+- **Código obtenido:** 201
+- **Resultado:** OK — reclamación registrada correctamente.
 
-Resultado: OK — reclamación registrada correctamente
+## Endpoint 7
 
-Endpoint 7
-HU: HU-15
+- **HU:** HU-15
+- **Método:** PATCH
+- **URL:** `http://localhost:8084/api/reclamaciones/{id}/estado`
+- **Body:**
 
-Método: PATCH
-
-URL: http://localhost:8084/api/reclamaciones/{id}/estado
-
-Body:
-
-JSON
+```json
 {
   "estado": "CERRADA"
 }
-Código esperado: 200
+```
 
-Código obtenido: 200
+- **Código esperado:** 200
+- **Código obtenido:** 200
+- **Resultado:** OK — estado de reclamación actualizado.
 
-Resultado: OK — estado de reclamación actualizado
+## Endpoint 8 — Caso de error
 
-Endpoint 8 (Caso de Error)
-HU: HU-15
+- **HU:** HU-15
+- **Método:** PATCH
+- **URL:** `http://localhost:8084/api/devoluciones/1/estado`
+- **Body:**
 
-Método: PATCH
-
-URL: http://localhost:8084/api/devoluciones/1/estado
-
-Body:
-
-JSON
+```json
 {
- "estado": "INVALIDO"
+  "estado": "INVALIDO"
 }
-Código esperado: 400
+```
 
-Código obtenido: 400
+- **Código esperado:** 400
+- **Código obtenido:** 400
+- **Resultado:** Error 400 — estado de devolución inválido.
 
-Resultado: Error 400 — "Estado de devolución inválido"
+## Nota para defensa
+
+Las capturas reales de Postman deben adjuntarse en Miro o en la carpeta de evidencias del equipo para respaldar la ejecución de estos endpoints durante la defensa.
+
+## 9. Alcance académico
+
+Este documento es de carácter académico. La integración con el SII no está implementada. La entidad Factura representa el concepto dentro del sistema EcoMarket SPA.
