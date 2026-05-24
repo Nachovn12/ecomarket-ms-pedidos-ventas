@@ -4,7 +4,7 @@
 
 - **HU:** HU-12
 - **Método:** GET
-- **URL:** `http://localhost:8084/api/pedidos/{idPedido}/estado`
+- **URL:** `http://localhost:8086/api/pedidos/{idPedido}/estado`
 - **Body:** N/A
 - **Código esperado:** 200
 - **Código obtenido:** 200
@@ -14,7 +14,7 @@
 
 - **HU:** HU-12
 - **Método:** GET
-- **URL:** `http://localhost:8084/api/pedidos/clientes/{idCliente}/historial`
+- **URL:** `http://localhost:8086/api/pedidos/clientes/{idCliente}/historial`
 - **Body:** N/A
 - **Código esperado:** 200
 - **Código obtenido:** 200
@@ -24,7 +24,7 @@
 
 - **HU:** HU-12
 - **Método:** GET
-- **URL:** `http://localhost:8084/api/pedidos/{idPedido}/historial`
+- **URL:** `http://localhost:8086/api/pedidos/{idPedido}/historial`
 - **Body:** N/A
 - **Código esperado:** 200
 - **Código obtenido:** 200
@@ -34,7 +34,7 @@
 
 - **HU:** HU-15
 - **Método:** POST
-- **URL:** `http://localhost:8084/api/ventas/{idVenta}/devoluciones`
+- **URL:** `http://localhost:8086/api/ventas/{idVenta}/devoluciones`
 - **Body:**
 
 ```json
@@ -52,7 +52,7 @@
 
 - **HU:** HU-15
 - **Método:** PATCH
-- **URL:** `http://localhost:8084/api/devoluciones/{id}/estado`
+- **URL:** `http://localhost:8086/api/devoluciones/{id}/estado`
 - **Body:**
 
 ```json
@@ -69,7 +69,7 @@
 
 - **HU:** HU-15
 - **Método:** POST
-- **URL:** `http://localhost:8084/api/reclamaciones`
+- **URL:** `http://localhost:8086/api/reclamaciones`
 - **Body:**
 
 ```json
@@ -89,7 +89,7 @@
 
 - **HU:** HU-15
 - **Método:** PATCH
-- **URL:** `http://localhost:8084/api/reclamaciones/{id}/estado`
+- **URL:** `http://localhost:8086/api/reclamaciones/{id}/estado`
 - **Body:**
 
 ```json
@@ -106,7 +106,7 @@
 
 - **HU:** HU-15
 - **Método:** PATCH
-- **URL:** `http://localhost:8084/api/devoluciones/1/estado`
+- **URL:** `http://localhost:8086/api/devoluciones/1/estado`
 - **Body:**
 
 ```json
