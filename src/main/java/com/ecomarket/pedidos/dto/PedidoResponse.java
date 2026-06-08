@@ -1,7 +1,7 @@
 package com.ecomarket.pedidos.dto;
 
-import com.ecomarket.pedidos.entity.EstadoPedido;
-import com.ecomarket.pedidos.entity.MetodoPago;
+import com.ecomarket.pedidos.model.EstadoPedido;
+import com.ecomarket.pedidos.model.MetodoPago;
 import lombok.Data;
 
 import java.time.LocalDateTime;

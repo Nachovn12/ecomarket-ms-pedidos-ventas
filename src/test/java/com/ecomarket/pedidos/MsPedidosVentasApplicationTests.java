@@ -1,7 +1,7 @@
 package com.ecomarket.pedidos;
 
 import com.ecomarket.pedidos.dto.*;
-import com.ecomarket.pedidos.entity.*;
+import com.ecomarket.pedidos.model.*;
 import com.ecomarket.pedidos.service.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

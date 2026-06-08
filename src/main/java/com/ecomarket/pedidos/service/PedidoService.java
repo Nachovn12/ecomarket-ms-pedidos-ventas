@@ -3,7 +3,7 @@ package com.ecomarket.pedidos.service;
 import com.ecomarket.pedidos.dto.CrearPedidoRequest;
 import com.ecomarket.pedidos.dto.CrearReclamacionRequest;
 import com.ecomarket.pedidos.dto.PedidoResponse;
-import com.ecomarket.pedidos.entity.*;
+import com.ecomarket.pedidos.model.*;
 import com.ecomarket.pedidos.repository.CarritoCompraRepository;
 import com.ecomarket.pedidos.repository.HistorialPedidoRepository;
 import com.ecomarket.pedidos.repository.PedidoRepository;

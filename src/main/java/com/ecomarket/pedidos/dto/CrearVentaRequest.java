@@ -1,6 +1,6 @@
 package com.ecomarket.pedidos.dto;
 
-import com.ecomarket.pedidos.entity.MetodoPago;
+import com.ecomarket.pedidos.model.MetodoPago;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;

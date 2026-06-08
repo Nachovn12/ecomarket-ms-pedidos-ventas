@@ -1,6 +1,6 @@
 package com.ecomarket.pedidos.repository;
 
-import com.ecomarket.pedidos.entity.Factura;
+import com.ecomarket.pedidos.model.Factura;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

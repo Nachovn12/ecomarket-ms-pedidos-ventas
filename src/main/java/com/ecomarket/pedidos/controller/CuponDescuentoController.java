@@ -1,6 +1,6 @@
 package com.ecomarket.pedidos.controller;
 
-import com.ecomarket.pedidos.entity.CuponDescuento;
+import com.ecomarket.pedidos.model.CuponDescuento;
 import com.ecomarket.pedidos.service.CuponDescuentoService;
 import jakarta.validation.Valid;
 import org.springframework.hateoas.EntityModel;

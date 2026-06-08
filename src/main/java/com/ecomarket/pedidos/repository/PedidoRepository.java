@@ -1,7 +1,7 @@
 package com.ecomarket.pedidos.repository;
 
-import com.ecomarket.pedidos.entity.EstadoPedido;
-import com.ecomarket.pedidos.entity.Pedido;
+import com.ecomarket.pedidos.model.EstadoPedido;
+import com.ecomarket.pedidos.model.Pedido;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

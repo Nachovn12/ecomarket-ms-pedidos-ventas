@@ -2,8 +2,8 @@ package com.ecomarket.pedidos.service;
 
 import com.ecomarket.pedidos.dto.CrearFacturaRequest;
 import com.ecomarket.pedidos.dto.CrearVentaRequest;
-import com.ecomarket.pedidos.entity.Factura;
-import com.ecomarket.pedidos.entity.Venta;
+import com.ecomarket.pedidos.model.Factura;
+import com.ecomarket.pedidos.model.Venta;
 import com.ecomarket.pedidos.repository.FacturaRepository;
 import com.ecomarket.pedidos.repository.VentaRepository;
 import org.springframework.stereotype.Service;

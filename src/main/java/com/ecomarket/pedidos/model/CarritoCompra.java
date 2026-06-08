@@ -1,5 +1,7 @@
-package com.ecomarket.pedidos.entity;
+package com.ecomarket.pedidos.model;
 
+
+import lombok.NoArgsConstructor;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -13,6 +15,7 @@ import java.util.List;
 @Table(name = "carritos_compra")
 @Getter
 @Setter
+@NoArgsConstructor
 public class CarritoCompra {
 
     @Id

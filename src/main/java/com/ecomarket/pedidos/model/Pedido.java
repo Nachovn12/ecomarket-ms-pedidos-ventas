@@ -1,5 +1,7 @@
-package com.ecomarket.pedidos.entity;
+package com.ecomarket.pedidos.model;
 
+
+import lombok.NoArgsConstructor;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -12,6 +14,7 @@ import java.util.List;
 @Table(name = "pedidos")
 @Getter
 @Setter
+@NoArgsConstructor
 public class Pedido {
 
     @Id

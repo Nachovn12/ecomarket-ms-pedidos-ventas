@@ -1,5 +1,7 @@
-package com.ecomarket.pedidos.entity;
+package com.ecomarket.pedidos.model;
 
+
+import lombok.NoArgsConstructor;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -10,6 +12,7 @@ import java.time.LocalDateTime;
 @Table(name = "devoluciones")
 @Getter
 @Setter
+@NoArgsConstructor
 public class Devolucion {
 
     @Id

@@ -1,6 +1,6 @@
 package com.ecomarket.pedidos.repository;
 
-import com.ecomarket.pedidos.entity.Venta;
+import com.ecomarket.pedidos.model.Venta;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

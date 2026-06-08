@@ -1,7 +1,7 @@
 package com.ecomarket.pedidos.repository;
 
-import com.ecomarket.pedidos.entity.CarritoCompra;
-import com.ecomarket.pedidos.entity.EstadoCarrito;
+import com.ecomarket.pedidos.model.CarritoCompra;
+import com.ecomarket.pedidos.model.EstadoCarrito;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

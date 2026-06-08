@@ -1,6 +1,6 @@
 package com.ecomarket.pedidos.repository;
 
-import com.ecomarket.pedidos.entity.Reclamacion;
+import com.ecomarket.pedidos.model.Reclamacion;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

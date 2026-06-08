@@ -1,8 +1,8 @@
 package com.ecomarket.pedidos.service;
 
 import com.ecomarket.pedidos.dto.AplicarCuponResponse;
-import com.ecomarket.pedidos.entity.CuponDescuento;
-import com.ecomarket.pedidos.entity.TipoDescuento;
+import com.ecomarket.pedidos.model.CuponDescuento;
+import com.ecomarket.pedidos.model.TipoDescuento;
 import com.ecomarket.pedidos.repository.CuponDescuentoRepository;
 import org.springframework.stereotype.Service;
 

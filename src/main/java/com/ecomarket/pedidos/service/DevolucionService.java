@@ -2,8 +2,8 @@ package com.ecomarket.pedidos.service;
 
 import com.ecomarket.pedidos.dto.CrearDevolucionRequest;
 import com.ecomarket.pedidos.dto.CrearReclamacionRequest;
-import com.ecomarket.pedidos.entity.Devolucion;
-import com.ecomarket.pedidos.entity.Reclamacion;
+import com.ecomarket.pedidos.model.Devolucion;
+import com.ecomarket.pedidos.model.Reclamacion;
 import com.ecomarket.pedidos.repository.DevolucionRepository;
 import com.ecomarket.pedidos.repository.ReclamacionRepository;
 import org.slf4j.Logger;

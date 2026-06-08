@@ -1,6 +1,6 @@
 package com.ecomarket.pedidos.repository;
 
-import com.ecomarket.pedidos.entity.CuponDescuento;
+import com.ecomarket.pedidos.model.CuponDescuento;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

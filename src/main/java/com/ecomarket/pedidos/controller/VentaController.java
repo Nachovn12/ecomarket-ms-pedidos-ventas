@@ -2,8 +2,8 @@ package com.ecomarket.pedidos.controller;
 
 import com.ecomarket.pedidos.dto.CrearFacturaRequest;
 import com.ecomarket.pedidos.dto.CrearVentaRequest;
-import com.ecomarket.pedidos.entity.Factura;
-import com.ecomarket.pedidos.entity.Venta;
+import com.ecomarket.pedidos.model.Factura;
+import com.ecomarket.pedidos.model.Venta;
 import com.ecomarket.pedidos.service.VentaService;
 import jakarta.validation.Valid;
 import org.springframework.hateoas.CollectionModel;

@@ -1,5 +1,7 @@
-package com.ecomarket.pedidos.entity;
+package com.ecomarket.pedidos.model;
 
+
+import lombok.NoArgsConstructor;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -8,6 +10,7 @@ import lombok.Setter;
 @Table(name = "detalles_pedido")
 @Getter
 @Setter
+@NoArgsConstructor
 public class DetallePedido {
 
     @Id

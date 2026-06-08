@@ -1,4 +1,4 @@
-package com.ecomarket.pedidos.entity;
+package com.ecomarket.pedidos.model;
 
 public enum EstadoCarrito {
     ACTIVO,

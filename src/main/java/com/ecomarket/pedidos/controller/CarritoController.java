@@ -5,7 +5,7 @@ import com.ecomarket.pedidos.dto.AgregarItemCarritoRequest;
 import com.ecomarket.pedidos.dto.AplicarCuponRequest;
 import com.ecomarket.pedidos.dto.AplicarCuponResponse;
 import com.ecomarket.pedidos.dto.CrearCarritoRequest;
-import com.ecomarket.pedidos.entity.CarritoCompra;
+import com.ecomarket.pedidos.model.CarritoCompra;
 import com.ecomarket.pedidos.service.CarritoService;
 import jakarta.validation.Valid;
 import org.springframework.hateoas.CollectionModel;
