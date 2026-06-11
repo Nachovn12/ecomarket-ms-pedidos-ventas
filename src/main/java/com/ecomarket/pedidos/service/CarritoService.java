@@ -16,6 +16,8 @@ import java.util.List;
 @Service
 public class CarritoService {
 
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(CarritoService.class);
+
     private final CarritoCompraRepository carritoCompraRepository;
     private final ItemCarritoRepository itemCarritoRepository;
     private final CuponDescuentoService cuponDescuentoService;
@@ -31,11 +33,14 @@ public class CarritoService {
     }
 
     public CarritoCompra crearCarrito(Long idCliente) {
+        log.info("Creando carrito para cliente. idCliente={}", idCliente);
         CarritoCompra carrito = new CarritoCompra();
         carrito.setIdCliente(idCliente);
         carrito.setEstado(EstadoCarrito.ACTIVO);
         carrito.recalcularTotales();
-        return carritoCompraRepository.save(carrito);
+        CarritoCompra guardado = carritoCompraRepository.save(carrito);
+        log.info("Carrito creado correctamente. idCarrito={}, idCliente={}", guardado.getIdCarrito(), idCliente);
+        return guardado;
     }
 
     public List<CarritoCompra> listarCarritos() {

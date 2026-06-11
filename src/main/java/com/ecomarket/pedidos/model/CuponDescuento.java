@@ -1,16 +1,15 @@
 package com.ecomarket.pedidos.model;
 
-
-import lombok.Setter;
-import lombok.NoArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 import jakarta.persistence.*;
-import jakarta.validation.constraints.DecimalMin;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
-
 import java.time.LocalDate;
 
+/**
+ * Entidad JPA de Cupón de Descuento.
+ * Las validaciones de entrada se gestionan en la capa de Service (CuponDescuentoService).
+ */
 @Entity
 @Table(name = "cupones_descuento")
 @Getter
@@ -22,24 +21,19 @@ public class CuponDescuento {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long idCupon;
 
-    @NotBlank
-    @Column(nullable = false, unique = true)
+    @Column(nullable = false, unique = true, length = 50)
     private String codigo;
 
-    @NotNull
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(nullable = false, length = 20)
     private TipoDescuento tipoDescuento;
 
-    @NotNull
-    @DecimalMin("0.0")
     @Column(nullable = false)
     private Double valorDescuento;
 
-    @DecimalMin("0.0")
     private Double montoMinimo;
 
-    @NotNull
+    @Column(nullable = false)
     private LocalDate fechaVencimiento;
 
     @Column(nullable = false)

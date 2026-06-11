@@ -16,6 +16,8 @@ import java.util.List;
 @Service
 public class PedidoService {
 
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(PedidoService.class);
+
     private final PedidoRepository pedidoRepository;
     private final CarritoCompraRepository carritoCompraRepository;
     private final HistorialPedidoRepository historialPedidoRepository;
@@ -33,6 +35,7 @@ public class PedidoService {
 
     @Transactional
     public Pedido crearDesdeCarrito(Long idCarrito, CrearPedidoRequest request) {
+        log.info("Creando pedido desde carrito. idCarrito={}", idCarrito);
         CarritoCompra carrito = carritoCompraRepository.findById(idCarrito)
                 .orElseThrow(() -> new IllegalArgumentException("Carrito no encontrado: " + idCarrito));
 
@@ -70,6 +73,7 @@ public class PedidoService {
 
         Pedido pedidoGuardado = pedidoRepository.save(pedido);
         registrarHistorial(pedidoGuardado.getIdPedido(), null, EstadoPedido.PENDIENTE, "Pedido creado desde carrito");
+        log.info("Pedido creado correctamente. idPedido={}, idCliente={}", pedidoGuardado.getIdPedido(), pedidoGuardado.getIdCliente());
         return pedidoGuardado;
     }
 
@@ -87,14 +91,20 @@ public class PedidoService {
     @Transactional
     public Pedido actualizarPedido(Long idPedido, CrearPedidoRequest request) {
         Pedido pedido = obtenerPedido(idPedido);
+        if (pedido.getEstado() == EstadoPedido.CANCELADO || pedido.getEstado() == EstadoPedido.ENTREGADO) {
+            throw new IllegalArgumentException(
+                    "No se puede modificar un pedido en estado " + pedido.getEstado());
+        }
         pedido.setMetodoPago(request.getMetodoPago());
         pedido.setDireccionEntrega(request.getDireccionEntrega());
         pedido.setObservaciones(request.getObservaciones());
+        log.info("Pedido actualizado. idPedido={}", idPedido);
         return pedidoRepository.save(pedido);
     }
 
     @Transactional
     public void eliminarPedido(Long idPedido) {
+        log.info("Eliminando pedido. idPedido={}", idPedido);
         Pedido pedido = obtenerPedido(idPedido);
         pedidoRepository.delete(pedido);
     }
