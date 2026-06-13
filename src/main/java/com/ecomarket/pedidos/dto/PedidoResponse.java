@@ -32,6 +32,9 @@ public class PedidoResponse {
     @Schema(description = "Total del pedido", example = "17910.0")
     private Double total;
 
+    @Schema(description = "IVA (19% sobre subtotal menos descuento)", example = "756.2")
+    private Double iva;
+
     @Schema(description = "Direccion de entrega", example = "Av. Siempre Viva 742, Santiago")
     private String direccionEntrega;
 

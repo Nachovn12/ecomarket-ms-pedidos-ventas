@@ -236,6 +236,7 @@ public class PedidoService {
         r.setSubtotal(pedido.getSubtotal());
         r.setDescuento(pedido.getDescuento());
         r.setTotal(pedido.getTotal());
+        r.setIva(pedido.getIva());
         r.setDireccionEntrega(pedido.getDireccionEntrega());
         r.setObservaciones(pedido.getObservaciones());
         r.setFechaCreacion(pedido.getFechaCreacion());
