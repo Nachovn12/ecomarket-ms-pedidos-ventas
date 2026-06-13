@@ -1,6 +1,7 @@
 package com.ecomarket.pedidos.model;
 
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.NoArgsConstructor;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
@@ -16,35 +17,47 @@ import java.util.List;
 @Getter
 @Setter
 @NoArgsConstructor
+@Schema(description = "Entidad JPA que representa el carrito de compras de un cliente")
 public class CarritoCompra {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Schema(description = "ID del carrito", example = "1", accessMode = Schema.AccessMode.READ_ONLY)
     private Long idCarrito;
 
     @Column(nullable = false)
+    @Schema(description = "ID del cliente dueno del carrito", example = "10", requiredMode = Schema.RequiredMode.REQUIRED)
     private Long idCliente;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
+    @Schema(description = "Estado del carrito", example = "ACTIVO", allowableValues = {"ACTIVO", "CONVERTIDO", "VACIO", "CANCELADO"})
     private EstadoCarrito estado = EstadoCarrito.ACTIVO;
 
     @Column(nullable = false)
+    @Schema(description = "Subtotal del carrito sin descuentos", example = "19900.0")
     private Double subtotal = 0.0;
 
     @Column(nullable = false)
+    @Schema(description = "Monto descontado por cupones", example = "1990.0")
     private Double descuentoAplicado = 0.0;
 
     @Column(nullable = false)
+    @Schema(description = "Total final del carrito", example = "17910.0")
     private Double total = 0.0;
 
+    @Schema(description = "Codigo del cupon actualmente aplicado", example = "ECO10")
     private String codigoCuponAplicado;
 
+    @Schema(description = "Fecha de creacion del carrito", example = "2026-06-01T10:00:00", accessMode = Schema.AccessMode.READ_ONLY)
     private LocalDateTime fechaCreacion;
+
+    @Schema(description = "Fecha de ultima actualizacion", example = "2026-06-01T12:00:00", accessMode = Schema.AccessMode.READ_ONLY)
     private LocalDateTime fechaActualizacion;
 
     @OneToMany(mappedBy = "carrito", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonManagedReference
+    @Schema(description = "Items contenidos en el carrito")
     private List<ItemCarrito> items = new ArrayList<>();
 
     @PrePersist

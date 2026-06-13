@@ -7,6 +7,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.when;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
@@ -22,10 +25,17 @@ class MsPedidosVentasApplicationTests {
     @Autowired private VentaService ventaService;
     @Autowired private DevolucionService devolucionService;
 
+    @MockitoBean private CatalogoClientService catalogoClientService;
+    @MockitoBean private InventarioClientService inventarioClientService;
+
     private Long idCarritoActivo;
 
     @BeforeEach
     void setUp() {
+        // Stubs para que la validacion contra MS dependientes no falle en tests unitarios
+        when(inventarioClientService.consultarStock(anyLong())).thenReturn(java.util.Map.of("stockActual", 1000));
+        when(catalogoClientService.obtenerProducto(anyLong())).thenReturn(java.util.Map.of("idProducto", 1, "precio", 1000.0));
+        when(inventarioClientService.descontarStock(anyLong(), org.mockito.ArgumentMatchers.anyInt(), org.mockito.ArgumentMatchers.anyString())).thenReturn(true);
         CarritoCompra carrito = carritoService.crearCarrito(1L);
         AgregarItemCarritoRequest itemReq = new AgregarItemCarritoRequest();
         itemReq.setIdProducto(10L);

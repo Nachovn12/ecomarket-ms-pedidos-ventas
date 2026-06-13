@@ -12,6 +12,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import com.ecomarket.pedidos.dto.CarritoResponse;
+import com.ecomarket.pedidos.dto.ItemCarritoResponse;
 
 @Service
 public class CarritoService {
@@ -141,5 +143,39 @@ public class CarritoService {
     private void limpiarCuponAplicado(CarritoCompra carrito) {
         carrito.setDescuentoAplicado(0.0);
         carrito.setCodigoCuponAplicado(null);
+    }
+
+
+    public CarritoResponse toResponse(CarritoCompra carrito) {
+        if (carrito == null) {
+            return null;
+        }
+        CarritoResponse r = new CarritoResponse();
+        r.setIdCarrito(carrito.getIdCarrito());
+        r.setIdCliente(carrito.getIdCliente());
+        r.setEstado(carrito.getEstado());
+        r.setSubtotal(carrito.getSubtotal());
+        r.setDescuentoAplicado(carrito.getDescuentoAplicado());
+        r.setTotal(carrito.getTotal());
+        r.setCodigoCuponAplicado(carrito.getCodigoCuponAplicado());
+        r.setFechaCreacion(carrito.getFechaCreacion());
+        r.setFechaActualizacion(carrito.getFechaActualizacion());
+        if (carrito.getItems() != null) {
+            r.setItems(carrito.getItems().stream()
+                    .map(this::toItemResponse)
+                    .toList());
+        }
+        return r;
+    }
+
+    public ItemCarritoResponse toItemResponse(ItemCarrito item) {
+        ItemCarritoResponse r = new ItemCarritoResponse();
+        r.setIdItem(item.getIdItem());
+        r.setIdProducto(item.getIdProducto());
+        r.setNombreProducto(item.getNombreProducto());
+        r.setCantidad(item.getCantidad());
+        r.setPrecioUnitario(item.getPrecioUnitario());
+        r.setSubtotal(item.getSubtotal());
+        return r;
     }
 }

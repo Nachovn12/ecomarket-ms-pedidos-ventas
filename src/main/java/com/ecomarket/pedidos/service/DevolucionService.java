@@ -4,6 +4,8 @@ import com.ecomarket.pedidos.dto.CrearDevolucionRequest;
 import com.ecomarket.pedidos.dto.CrearReclamacionRequest;
 import com.ecomarket.pedidos.model.Devolucion;
 import com.ecomarket.pedidos.model.Reclamacion;
+import com.ecomarket.pedidos.dto.DevolucionResponse;
+import com.ecomarket.pedidos.dto.ReclamacionResponse;
 import com.ecomarket.pedidos.repository.DevolucionRepository;
 import com.ecomarket.pedidos.repository.ReclamacionRepository;
 import org.slf4j.Logger;
@@ -115,5 +117,37 @@ public class DevolucionService {
                     HttpStatus.BAD_REQUEST, "Estado de reclamación inválido");
         }
         return estadoNormalizado;
+    }
+
+
+    public DevolucionResponse toResponse(Devolucion devolucion) {
+        if (devolucion == null) {
+            return null;
+        }
+        DevolucionResponse r = new DevolucionResponse();
+        r.setIdDevolucion(devolucion.getIdDevolucion());
+        r.setIdCliente(devolucion.getIdCliente());
+        r.setIdPedido(devolucion.getIdPedido());
+        r.setIdVenta(devolucion.getIdVenta());
+        r.setMotivo(devolucion.getMotivo());
+        r.setEstado(devolucion.getEstado());
+        r.setFechaCreacion(devolucion.getFechaCreacion());
+        return r;
+    }
+
+    public ReclamacionResponse toResponse(Reclamacion reclamacion) {
+        if (reclamacion == null) {
+            return null;
+        }
+        ReclamacionResponse r = new ReclamacionResponse();
+        r.setIdReclamacion(reclamacion.getIdReclamacion());
+        r.setIdCliente(reclamacion.getIdCliente());
+        r.setIdPedido(reclamacion.getIdPedido());
+        r.setIdVenta(reclamacion.getIdVenta());
+        r.setMotivo(reclamacion.getMotivo());
+        r.setDescripcion(reclamacion.getDescripcion());
+        r.setEstado(reclamacion.getEstado());
+        r.setFechaCreacion(reclamacion.getFechaCreacion());
+        return r;
     }
 }

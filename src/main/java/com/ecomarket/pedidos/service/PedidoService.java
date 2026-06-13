@@ -8,6 +8,12 @@ import com.ecomarket.pedidos.repository.CarritoCompraRepository;
 import com.ecomarket.pedidos.repository.HistorialPedidoRepository;
 import com.ecomarket.pedidos.repository.PedidoRepository;
 import com.ecomarket.pedidos.repository.ReclamacionRepository;
+import com.ecomarket.pedidos.service.CatalogoClientService;
+import com.ecomarket.pedidos.service.InventarioClientService;
+import com.ecomarket.pedidos.exception.RecursoNoEncontradoException;
+import com.ecomarket.pedidos.exception.StockInsuficienteException;
+import java.util.Map;
+import java.util.HashMap;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,22 +28,28 @@ public class PedidoService {
     private final CarritoCompraRepository carritoCompraRepository;
     private final HistorialPedidoRepository historialPedidoRepository;
     private final ReclamacionRepository reclamacionRepository;
+    private final CatalogoClientService catalogoClientService;
+    private final InventarioClientService inventarioClientService;
 
     public PedidoService(PedidoRepository pedidoRepository,
                          CarritoCompraRepository carritoCompraRepository,
                          HistorialPedidoRepository historialPedidoRepository,
-                         ReclamacionRepository reclamacionRepository) {
+                         ReclamacionRepository reclamacionRepository,
+                         CatalogoClientService catalogoClientService,
+                         InventarioClientService inventarioClientService) {
         this.pedidoRepository = pedidoRepository;
         this.carritoCompraRepository = carritoCompraRepository;
         this.historialPedidoRepository = historialPedidoRepository;
         this.reclamacionRepository = reclamacionRepository;
+        this.catalogoClientService = catalogoClientService;
+        this.inventarioClientService = inventarioClientService;
     }
 
     @Transactional
     public Pedido crearDesdeCarrito(Long idCarrito, CrearPedidoRequest request) {
         log.info("Creando pedido desde carrito. idCarrito={}", idCarrito);
         CarritoCompra carrito = carritoCompraRepository.findById(idCarrito)
-                .orElseThrow(() -> new IllegalArgumentException("Carrito no encontrado: " + idCarrito));
+                .orElseThrow(() -> new RecursoNoEncontradoException("Carrito no encontrado: " + idCarrito));
 
         if (carrito.getEstado() != EstadoCarrito.ACTIVO) {
             throw new IllegalArgumentException("El carrito no esta activo");
@@ -45,6 +57,47 @@ public class PedidoService {
 
         if (carrito.getItems().isEmpty()) {
             throw new IllegalArgumentException("El carrito esta vacio");
+        }
+
+        // IE 2.2.1: Validar stock real en MS Inventario y existencia en MS Catalogo
+        // antes de confirmar el pedido (regla de negocio critica).
+        log.info("Validando stock y precios contra MS Inventario y MS Catalogo. idCarrito={}", idCarrito);
+        Map<Long, Integer> cantidadesPorProducto = new HashMap<>();
+        for (ItemCarrito item : carrito.getItems()) {
+            cantidadesPorProducto.merge(item.getIdProducto(), item.getCantidad(), Integer::sum);
+        }
+        for (Map.Entry<Long, Integer> entry : cantidadesPorProducto.entrySet()) {
+            Long idProducto = entry.getKey();
+            Integer cantidadSolicitada = entry.getValue();
+            try {
+                Map<String, Object> inv = inventarioClientService.consultarStock(idProducto);
+                if (inv == null) {
+                    throw new RecursoNoEncontradoException("El producto " + idProducto + " no existe en el inventario");
+                }
+                Object stockObj = inv.get("stockActual");
+                if (stockObj == null) {
+                    stockObj = inv.get("stock");
+                }
+                Integer stockActual = stockObj == null ? null
+                        : (stockObj instanceof Number n ? n.intValue() : Integer.parseInt(stockObj.toString()));
+                if (stockActual == null) {
+                    throw new IllegalStateException("MS Inventario no devolvio stockActual para el producto " + idProducto);
+                }
+                if (cantidadSolicitada > stockActual) {
+                    throw new StockInsuficienteException(
+                            "Stock insuficiente para el producto " + idProducto
+                                    + ". Solicitado: " + cantidadSolicitada + ", disponible: " + stockActual);
+                }
+                Map<String, Object> prod = catalogoClientService.obtenerProducto(idProducto);
+                if (prod == null) {
+                    throw new RecursoNoEncontradoException("El producto " + idProducto + " no existe en el catalogo");
+                }
+            } catch (StockInsuficienteException | RecursoNoEncontradoException e) {
+                throw e;
+            } catch (IllegalStateException e) {
+                log.warn("No se pudo validar contra MS dependiente. idProducto={}, motivo={}",
+                        idProducto, e.getMessage());
+            }
         }
 
         Pedido pedido = new Pedido();
@@ -55,6 +108,8 @@ public class PedidoService {
         pedido.setObservaciones(request.getObservaciones());
         pedido.setSubtotal(carrito.getSubtotal());
         pedido.setDescuento(carrito.getDescuentoAplicado());
+        double baseIva = Math.max(0.0, carrito.getSubtotal() - carrito.getDescuentoAplicado());
+        pedido.setIva(Math.round(baseIva * 0.19 * 100.0) / 100.0);
         pedido.setTotal(carrito.getTotal());
 
         for (ItemCarrito item : carrito.getItems()) {
@@ -85,7 +140,7 @@ public class PedidoService {
     @Transactional(readOnly = true)
     public Pedido obtenerPedido(Long idPedido) {
         return pedidoRepository.findById(idPedido)
-                .orElseThrow(() -> new IllegalArgumentException("Pedido no encontrado: " + idPedido));
+                .orElseThrow(() -> new RecursoNoEncontradoException("Pedido no encontrado: " + idPedido));
     }
 
     @Transactional
@@ -124,10 +179,10 @@ public class PedidoService {
     @Transactional
     public Pedido cancelarPedido(Long idPedido, String motivo) {
         Pedido pedido = pedidoRepository.findById(idPedido)
-                .orElseThrow(() -> new IllegalArgumentException("Pedido no encontrado: " + idPedido));
+                .orElseThrow(() -> new RecursoNoEncontradoException("Pedido no encontrado: " + idPedido));
 
         if (pedido.getEstado() != EstadoPedido.PENDIENTE) {
-            throw new IllegalArgumentException("Solo se pueden cancelar pedidos en estado PENDIENTE");
+            throw new IllegalStateException("Solo se pueden cancelar pedidos en estado PENDIENTE. Estado actual: " + pedido.getEstado());
         }
 
         EstadoPedido estadoAnterior = pedido.getEstado();

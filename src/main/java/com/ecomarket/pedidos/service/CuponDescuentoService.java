@@ -1,6 +1,7 @@
 package com.ecomarket.pedidos.service;
 
 import com.ecomarket.pedidos.dto.AplicarCuponResponse;
+import com.ecomarket.pedidos.dto.CuponDescuentoResponse;
 import com.ecomarket.pedidos.model.CuponDescuento;
 import com.ecomarket.pedidos.model.TipoDescuento;
 import com.ecomarket.pedidos.repository.CuponDescuentoRepository;
@@ -59,5 +60,21 @@ public class CuponDescuentoService {
             return Math.min(cupon.getValorDescuento(), subtotal);
         }
         throw new IllegalArgumentException("Tipo de descuento no soportado");
+    }
+
+
+    public CuponDescuentoResponse toResponse(CuponDescuento cupon) {
+        if (cupon == null) {
+            return null;
+        }
+        CuponDescuentoResponse r = new CuponDescuentoResponse();
+        r.setIdCupon(cupon.getIdCupon());
+        r.setCodigo(cupon.getCodigo());
+        r.setTipoDescuento(cupon.getTipoDescuento());
+        r.setValorDescuento(cupon.getValorDescuento());
+        r.setMontoMinimo(cupon.getMontoMinimo());
+        r.setFechaVencimiento(cupon.getFechaVencimiento());
+        r.setActivo(cupon.getActivo());
+        return r;
     }
 }
