@@ -29,7 +29,7 @@ import java.util.stream.Collectors;
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.*;
 
 @RestController
-@RequestMapping("/api")
+@RequestMapping("/api/pedidos")
 @Tag(name = "Devoluciones y Reclamaciones", description = "Gestion post-venta: devoluciones y reclamaciones")
 public class DevolucionController {
 
@@ -46,7 +46,7 @@ public class DevolucionController {
             @ApiResponse(responseCode = "400", description = "Datos invalidos", content = @Content),
             @ApiResponse(responseCode = "404", description = "Venta no encontrada", content = @Content)
     })
-    @PostMapping("/ventas/{idVenta}/devoluciones")
+    @PostMapping("/ventas-pedido/{idVenta}/devoluciones")
     public ResponseEntity<EntityModel<DevolucionResponse>> crearDevolucion(
             @Parameter(description = "ID de la venta", example = "1", required = true) @PathVariable Long idVenta,
             @Valid @RequestBody CrearDevolucionRequest request) {
