@@ -3,7 +3,6 @@ package com.ecomarket.pedidos.service;
 import com.ecomarket.pedidos.dto.CrearFacturaRequest;
 import com.ecomarket.pedidos.dto.VentaResponse;
 import com.ecomarket.pedidos.dto.FacturaResponse;
-import com.ecomarket.pedidos.dto.ItemVentaResponse;
 import com.ecomarket.pedidos.dto.CrearVentaRequest;
 import com.ecomarket.pedidos.model.Factura;
 import com.ecomarket.pedidos.model.Venta;
@@ -19,7 +18,7 @@ import java.util.Map;
 
 /**
  * Servicio de ventas y facturas.
- * Contiene la lógica de negocio para registrar ventas presenciales y generar facturas.
+ * Contiene la lÃ³gica de negocio para registrar ventas presenciales y generar facturas.
  * El folio de factura se obtiene de la BD para garantizar consecutividad entre reinicios.
  */
 @Service
@@ -154,7 +153,7 @@ public class VentaService {
             throw new IllegalStateException("La venta ya tiene una factura asociada");
         }
 
-        // Folio consecutivo obtenido desde BD — no se resetea entre reinicios
+        // Folio consecutivo obtenido desde BD â€” no se resetea entre reinicios
         int siguienteFolio = facturaRepository.findMaxFolio().orElse(1000) + 1;
 
         Factura factura = new Factura();
