@@ -10,6 +10,7 @@ import com.ecomarket.pedidos.repository.PedidoRepository;
 import com.ecomarket.pedidos.repository.ReclamacionRepository;
 import com.ecomarket.pedidos.service.CatalogoClientService;
 import com.ecomarket.pedidos.service.InventarioClientService;
+import com.ecomarket.pedidos.service.LogisticaClientService;
 import com.ecomarket.pedidos.exception.RecursoNoEncontradoException;
 import com.ecomarket.pedidos.exception.StockInsuficienteException;
 import java.util.Map;
@@ -30,19 +31,22 @@ public class PedidoService {
     private final ReclamacionRepository reclamacionRepository;
     private final CatalogoClientService catalogoClientService;
     private final InventarioClientService inventarioClientService;
+    private final LogisticaClientService logisticaClientService;
 
     public PedidoService(PedidoRepository pedidoRepository,
                          CarritoCompraRepository carritoCompraRepository,
                          HistorialPedidoRepository historialPedidoRepository,
                          ReclamacionRepository reclamacionRepository,
                          CatalogoClientService catalogoClientService,
-                         InventarioClientService inventarioClientService) {
+                         InventarioClientService inventarioClientService,
+                         LogisticaClientService logisticaClientService) {
         this.pedidoRepository = pedidoRepository;
         this.carritoCompraRepository = carritoCompraRepository;
         this.historialPedidoRepository = historialPedidoRepository;
         this.reclamacionRepository = reclamacionRepository;
         this.catalogoClientService = catalogoClientService;
         this.inventarioClientService = inventarioClientService;
+        this.logisticaClientService = logisticaClientService;
     }
 
     @Transactional
@@ -128,6 +132,7 @@ public class PedidoService {
 
         Pedido pedidoGuardado = pedidoRepository.save(pedido);
         registrarHistorial(pedidoGuardado.getIdPedido(), null, EstadoPedido.PENDIENTE, "Pedido creado desde carrito");
+        logisticaClientService.solicitarDespacho(pedidoGuardado.getIdPedido(), "Centro de distribucion EcoMarket", pedidoGuardado.getDireccionEntrega());
         log.info("Pedido creado correctamente. idPedido={}, idCliente={}", pedidoGuardado.getIdPedido(), pedidoGuardado.getIdCliente());
         return pedidoGuardado;
     }

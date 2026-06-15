@@ -8,6 +8,7 @@ import com.ecomarket.pedidos.model.EstadoCarrito;
 import com.ecomarket.pedidos.model.ItemCarrito;
 import com.ecomarket.pedidos.repository.CarritoCompraRepository;
 import com.ecomarket.pedidos.repository.ItemCarritoRepository;
+import com.ecomarket.pedidos.exception.RecursoNoEncontradoException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -51,7 +52,7 @@ public class CarritoService {
 
     public CarritoCompra obtenerCarrito(Long idCarrito) {
         return carritoCompraRepository.findById(idCarrito)
-                .orElseThrow(() -> new IllegalArgumentException("Carrito no encontrado"));
+                .orElseThrow(() -> new RecursoNoEncontradoException("Carrito no encontrado con id: " + idCarrito));
     }
 
     @Transactional
