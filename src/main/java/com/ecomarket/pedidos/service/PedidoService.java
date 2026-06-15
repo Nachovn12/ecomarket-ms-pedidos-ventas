@@ -29,11 +29,11 @@ public class PedidoService {
     private final CarritoCompraRepository carritoCompraRepository;
     private final HistorialPedidoRepository historialPedidoRepository;
     private final ReclamacionRepository reclamacionRepository;
-    @SuppressWarnings("unused")
+    @SuppressWarnings("all")
     private final CatalogoClientService catalogoClientService;
-    @SuppressWarnings("unused")
+    @SuppressWarnings("all")
     private final InventarioClientService inventarioClientService;
-    @SuppressWarnings("unused")
+    @SuppressWarnings("all")
     private final LogisticaClientService logisticaClientService;
 
     public PedidoService(PedidoRepository pedidoRepository,
