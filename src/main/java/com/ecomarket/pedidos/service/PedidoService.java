@@ -8,9 +8,6 @@ import com.ecomarket.pedidos.repository.CarritoCompraRepository;
 import com.ecomarket.pedidos.repository.HistorialPedidoRepository;
 import com.ecomarket.pedidos.repository.PedidoRepository;
 import com.ecomarket.pedidos.repository.ReclamacionRepository;
-import com.ecomarket.pedidos.service.CatalogoClientService;
-import com.ecomarket.pedidos.service.InventarioClientService;
-import com.ecomarket.pedidos.service.LogisticaClientService;
 import com.ecomarket.pedidos.exception.RecursoNoEncontradoException;
 import com.ecomarket.pedidos.exception.StockInsuficienteException;
 import java.util.Map;
@@ -29,20 +26,17 @@ public class PedidoService {
     private final CarritoCompraRepository carritoCompraRepository;
     private final HistorialPedidoRepository historialPedidoRepository;
     private final ReclamacionRepository reclamacionRepository;
-    @SuppressWarnings("all")
-    private final CatalogoClientService catalogoClientService;
-    @SuppressWarnings("all")
-    private final InventarioClientService inventarioClientService;
-    @SuppressWarnings("all")
-    private final LogisticaClientService logisticaClientService;
+    private final com.ecomarket.pedidos.service.CatalogoClientService catalogoClientService;
+    private final com.ecomarket.pedidos.service.InventarioClientService inventarioClientService;
+    private final com.ecomarket.pedidos.service.LogisticaClientService logisticaClientService;
 
     public PedidoService(PedidoRepository pedidoRepository,
                          CarritoCompraRepository carritoCompraRepository,
                          HistorialPedidoRepository historialPedidoRepository,
                          ReclamacionRepository reclamacionRepository,
-                         CatalogoClientService catalogoClientService,
-                         InventarioClientService inventarioClientService,
-                         LogisticaClientService logisticaClientService) {
+                         com.ecomarket.pedidos.service.CatalogoClientService catalogoClientService,
+                         com.ecomarket.pedidos.service.InventarioClientService inventarioClientService,
+                         com.ecomarket.pedidos.service.LogisticaClientService logisticaClientService) {
         this.pedidoRepository = pedidoRepository;
         this.carritoCompraRepository = carritoCompraRepository;
         this.historialPedidoRepository = historialPedidoRepository;
