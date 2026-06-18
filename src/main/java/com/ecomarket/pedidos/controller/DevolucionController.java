@@ -17,16 +17,11 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import org.springframework.hateoas.CollectionModel;
-import org.springframework.hateoas.EntityModel;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.stream.Collectors;
-
-import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.*;
 
 @RestController
 @RequestMapping("/api/pedidos")
@@ -47,36 +42,24 @@ public class DevolucionController {
             @ApiResponse(responseCode = "404", description = "Venta no encontrada", content = @Content)
     })
     @PostMapping("/ventas-pedido/{idVenta}/devoluciones")
-    public ResponseEntity<EntityModel<DevolucionResponse>> crearDevolucion(
+    public ResponseEntity<DevolucionResponse> crearDevolucion(
             @Parameter(description = "ID de la venta", example = "1", required = true) @PathVariable Long idVenta,
             @Valid @RequestBody CrearDevolucionRequest request) {
         request.setIdVenta(idVenta);
         Devolucion devolucion = devolucionService.crearDevolucion(request);
-        DevolucionResponse r = devolucionService.toResponse(devolucion);
-        EntityModel<DevolucionResponse> model = EntityModel.of(r);
-        model.add(linkTo(methodOn(DevolucionController.class)
-                .obtenerDevolucion(devolucion.getIdDevolucion())).withSelfRel());
-        return ResponseEntity.status(HttpStatus.CREATED).body(model);
+        return ResponseEntity.status(HttpStatus.CREATED).body(devolucionService.toResponse(devolucion));
     }
 
     @Operation(summary = "Listar todas las devoluciones")
     @ApiResponse(responseCode = "200", description = "Listado de devoluciones",
             content = @Content(schema = @Schema(implementation = DevolucionResponse.class)))
     @GetMapping("/devoluciones")
-    public ResponseEntity<CollectionModel<EntityModel<DevolucionResponse>>> listarDevoluciones() {
-        List<EntityModel<DevolucionResponse>> devoluciones = devolucionService.listarDevoluciones()
+    public ResponseEntity<List<DevolucionResponse>> listarDevoluciones() {
+        List<DevolucionResponse> devoluciones = devolucionService.listarDevoluciones()
                 .stream()
-                .map(d -> {
-                    DevolucionResponse r = devolucionService.toResponse(d);
-                    EntityModel<DevolucionResponse> model = EntityModel.of(r);
-                    model.add(linkTo(methodOn(DevolucionController.class)
-                            .obtenerDevolucion(d.getIdDevolucion())).withSelfRel());
-                    return model;
-                })
-                .collect(Collectors.toList());
-        CollectionModel<EntityModel<DevolucionResponse>> collection = CollectionModel.of(devoluciones);
-        collection.add(linkTo(methodOn(DevolucionController.class).listarDevoluciones()).withSelfRel());
-        return ResponseEntity.ok(collection);
+                .map(devolucionService::toResponse)
+                .toList();
+        return ResponseEntity.ok(devoluciones);
     }
 
     @Operation(summary = "Obtener una devolucion por ID")
@@ -86,14 +69,10 @@ public class DevolucionController {
             @ApiResponse(responseCode = "404", description = "Devolucion no encontrada", content = @Content)
     })
     @GetMapping("/devoluciones/{id}")
-    public ResponseEntity<EntityModel<DevolucionResponse>> obtenerDevolucion(
+    public ResponseEntity<DevolucionResponse> obtenerDevolucion(
             @Parameter(description = "ID de la devolucion", example = "1", required = true) @PathVariable Long id) {
         Devolucion devolucion = devolucionService.obtenerDevolucion(id);
-        DevolucionResponse r = devolucionService.toResponse(devolucion);
-        EntityModel<DevolucionResponse> model = EntityModel.of(r);
-        model.add(linkTo(methodOn(DevolucionController.class)
-                .obtenerDevolucion(id)).withSelfRel());
-        return ResponseEntity.ok(model);
+        return ResponseEntity.ok(devolucionService.toResponse(devolucion));
     }
 
     @Operation(summary = "Actualizar estado de una devolucion")
@@ -104,15 +83,11 @@ public class DevolucionController {
             @ApiResponse(responseCode = "404", description = "Devolucion no encontrada", content = @Content)
     })
     @PatchMapping("/devoluciones/{id}/estado")
-    public ResponseEntity<EntityModel<DevolucionResponse>> actualizarEstadoDevolucion(
+    public ResponseEntity<DevolucionResponse> actualizarEstadoDevolucion(
             @Parameter(description = "ID de la devolucion", example = "1", required = true) @PathVariable Long id,
             @Valid @RequestBody ActualizarEstadoDevolucionRequest request) {
         Devolucion devolucion = devolucionService.actualizarEstadoDevolucion(id, request.getEstado());
-        DevolucionResponse r = devolucionService.toResponse(devolucion);
-        EntityModel<DevolucionResponse> model = EntityModel.of(r);
-        model.add(linkTo(methodOn(DevolucionController.class)
-                .obtenerDevolucion(id)).withSelfRel());
-        return ResponseEntity.ok(model);
+        return ResponseEntity.ok(devolucionService.toResponse(devolucion));
     }
 
     @Operation(summary = "Crear una reclamacion")
@@ -122,34 +97,22 @@ public class DevolucionController {
             @ApiResponse(responseCode = "400", description = "Datos invalidos", content = @Content)
     })
     @PostMapping("/reclamaciones")
-    public ResponseEntity<EntityModel<ReclamacionResponse>> crearReclamacion(
+    public ResponseEntity<ReclamacionResponse> crearReclamacion(
             @Valid @RequestBody CrearReclamacionRequest request) {
         Reclamacion reclamacion = devolucionService.crearReclamacion(request);
-        ReclamacionResponse r = devolucionService.toResponse(reclamacion);
-        EntityModel<ReclamacionResponse> model = EntityModel.of(r);
-        model.add(linkTo(methodOn(DevolucionController.class)
-                .obtenerReclamacion(reclamacion.getIdReclamacion())).withSelfRel());
-        return ResponseEntity.status(HttpStatus.CREATED).body(model);
+        return ResponseEntity.status(HttpStatus.CREATED).body(devolucionService.toResponse(reclamacion));
     }
 
     @Operation(summary = "Listar todas las reclamaciones")
     @ApiResponse(responseCode = "200", description = "Listado de reclamaciones",
             content = @Content(schema = @Schema(implementation = ReclamacionResponse.class)))
     @GetMapping("/reclamaciones")
-    public ResponseEntity<CollectionModel<EntityModel<ReclamacionResponse>>> listarReclamaciones() {
-        List<EntityModel<ReclamacionResponse>> reclamaciones = devolucionService.listarReclamaciones()
+    public ResponseEntity<List<ReclamacionResponse>> listarReclamaciones() {
+        List<ReclamacionResponse> reclamaciones = devolucionService.listarReclamaciones()
                 .stream()
-                .map(rec -> {
-                    ReclamacionResponse r = devolucionService.toResponse(rec);
-                    EntityModel<ReclamacionResponse> model = EntityModel.of(r);
-                    model.add(linkTo(methodOn(DevolucionController.class)
-                            .obtenerReclamacion(rec.getIdReclamacion())).withSelfRel());
-                    return model;
-                })
-                .collect(Collectors.toList());
-        CollectionModel<EntityModel<ReclamacionResponse>> collection = CollectionModel.of(reclamaciones);
-        collection.add(linkTo(methodOn(DevolucionController.class).listarReclamaciones()).withSelfRel());
-        return ResponseEntity.ok(collection);
+                .map(devolucionService::toResponse)
+                .toList();
+        return ResponseEntity.ok(reclamaciones);
     }
 
     @Operation(summary = "Obtener una reclamacion por ID")
@@ -159,14 +122,10 @@ public class DevolucionController {
             @ApiResponse(responseCode = "404", description = "Reclamacion no encontrada", content = @Content)
     })
     @GetMapping("/reclamaciones/{id}")
-    public ResponseEntity<EntityModel<ReclamacionResponse>> obtenerReclamacion(
+    public ResponseEntity<ReclamacionResponse> obtenerReclamacion(
             @Parameter(description = "ID de la reclamacion", example = "1", required = true) @PathVariable Long id) {
         Reclamacion reclamacion = devolucionService.obtenerReclamacion(id);
-        ReclamacionResponse r = devolucionService.toResponse(reclamacion);
-        EntityModel<ReclamacionResponse> model = EntityModel.of(r);
-        model.add(linkTo(methodOn(DevolucionController.class)
-                .obtenerReclamacion(id)).withSelfRel());
-        return ResponseEntity.ok(model);
+        return ResponseEntity.ok(devolucionService.toResponse(reclamacion));
     }
 
     @Operation(summary = "Actualizar estado de una reclamacion")
@@ -177,14 +136,10 @@ public class DevolucionController {
             @ApiResponse(responseCode = "404", description = "Reclamacion no encontrada", content = @Content)
     })
     @PatchMapping("/reclamaciones/{id}/estado")
-    public ResponseEntity<EntityModel<ReclamacionResponse>> actualizarEstadoReclamacion(
+    public ResponseEntity<ReclamacionResponse> actualizarEstadoReclamacion(
             @Parameter(description = "ID de la reclamacion", example = "1", required = true) @PathVariable Long id,
             @Valid @RequestBody ActualizarEstadoReclamacionRequest request) {
         Reclamacion reclamacion = devolucionService.actualizarEstadoReclamacion(id, request.getEstado());
-        ReclamacionResponse r = devolucionService.toResponse(reclamacion);
-        EntityModel<ReclamacionResponse> model = EntityModel.of(r);
-        model.add(linkTo(methodOn(DevolucionController.class)
-                .obtenerReclamacion(id)).withSelfRel());
-        return ResponseEntity.ok(model);
+        return ResponseEntity.ok(devolucionService.toResponse(reclamacion));
     }
 }

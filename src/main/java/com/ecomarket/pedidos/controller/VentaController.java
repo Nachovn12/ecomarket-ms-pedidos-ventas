@@ -15,16 +15,11 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import org.springframework.hateoas.CollectionModel;
-import org.springframework.hateoas.EntityModel;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.stream.Collectors;
-
-import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.*;
 
 @RestController
 @RequestMapping("/api/ventas")
@@ -45,34 +40,22 @@ public class VentaController {
             @ApiResponse(responseCode = "400", description = "Items invalidos o vacios", content = @Content)
     })
     @PostMapping("/presencial")
-    public ResponseEntity<EntityModel<VentaResponse>> registrarVentaPresencial(
+    public ResponseEntity<VentaResponse> registrarVentaPresencial(
             @Valid @RequestBody CrearVentaRequest request) {
         Venta venta = ventaService.registrarVentaPresencial(request);
-        VentaResponse r = ventaService.toResponse(venta);
-        EntityModel<VentaResponse> model = EntityModel.of(r);
-        model.add(linkTo(methodOn(VentaController.class)
-                .obtenerVenta(venta.getIdVenta())).withSelfRel());
-        return ResponseEntity.status(HttpStatus.CREATED).body(model);
+        return ResponseEntity.status(HttpStatus.CREATED).body(ventaService.toResponse(venta));
     }
 
     @Operation(summary = "Listar todas las ventas")
     @ApiResponse(responseCode = "200", description = "Listado de ventas",
             content = @Content(schema = @Schema(implementation = VentaResponse.class)))
     @GetMapping
-    public ResponseEntity<CollectionModel<EntityModel<VentaResponse>>> listarVentas() {
-        List<EntityModel<VentaResponse>> ventas = ventaService.listarVentas()
+    public ResponseEntity<List<VentaResponse>> listarVentas() {
+        List<VentaResponse> ventas = ventaService.listarVentas()
                 .stream()
-                .map(v -> {
-                    VentaResponse r = ventaService.toResponse(v);
-                    EntityModel<VentaResponse> model = EntityModel.of(r);
-                    model.add(linkTo(methodOn(VentaController.class)
-                            .obtenerVenta(v.getIdVenta())).withSelfRel());
-                    return model;
-                })
-                .collect(Collectors.toList());
-        CollectionModel<EntityModel<VentaResponse>> collection = CollectionModel.of(ventas);
-        collection.add(linkTo(methodOn(VentaController.class).listarVentas()).withSelfRel());
-        return ResponseEntity.ok(collection);
+                .map(ventaService::toResponse)
+                .toList();
+        return ResponseEntity.ok(ventas);
     }
 
     @Operation(summary = "Obtener una venta por ID")
@@ -82,14 +65,10 @@ public class VentaController {
             @ApiResponse(responseCode = "404", description = "Venta no encontrada", content = @Content)
     })
     @GetMapping("/{idVenta}")
-    public ResponseEntity<EntityModel<VentaResponse>> obtenerVenta(
+    public ResponseEntity<VentaResponse> obtenerVenta(
             @Parameter(description = "ID de la venta", example = "1", required = true) @PathVariable Long idVenta) {
         Venta venta = ventaService.obtenerVenta(idVenta);
-        VentaResponse r = ventaService.toResponse(venta);
-        EntityModel<VentaResponse> model = EntityModel.of(r);
-        model.add(linkTo(methodOn(VentaController.class)
-                .obtenerVenta(idVenta)).withSelfRel());
-        return ResponseEntity.ok(model);
+        return ResponseEntity.ok(ventaService.toResponse(venta));
     }
 
     @Operation(summary = "Actualizar una venta existente")
@@ -100,15 +79,11 @@ public class VentaController {
             @ApiResponse(responseCode = "404", description = "Venta no encontrada", content = @Content)
     })
     @PutMapping("/{idVenta}")
-    public ResponseEntity<EntityModel<VentaResponse>> actualizarVenta(
+    public ResponseEntity<VentaResponse> actualizarVenta(
             @Parameter(description = "ID de la venta", example = "1", required = true) @PathVariable Long idVenta,
             @Valid @RequestBody CrearVentaRequest request) {
         Venta venta = ventaService.actualizarVenta(idVenta, request);
-        VentaResponse r = ventaService.toResponse(venta);
-        EntityModel<VentaResponse> model = EntityModel.of(r);
-        model.add(linkTo(methodOn(VentaController.class)
-                .obtenerVenta(idVenta)).withSelfRel());
-        return ResponseEntity.ok(model);
+        return ResponseEntity.ok(ventaService.toResponse(venta));
     }
 
     @Operation(summary = "Eliminar una venta")
@@ -132,16 +107,12 @@ public class VentaController {
             @ApiResponse(responseCode = "409", description = "La venta ya tiene factura asociada", content = @Content)
     })
     @PostMapping("/{idVenta}/factura")
-    public ResponseEntity<EntityModel<FacturaResponse>> generarFactura(
+    public ResponseEntity<FacturaResponse> generarFactura(
             @Parameter(description = "ID de la venta", example = "1", required = true) @PathVariable Long idVenta,
             @RequestBody(required = false) CrearFacturaRequest request) {
         if (request == null) request = new CrearFacturaRequest();
         Factura factura = ventaService.generarFactura(idVenta, request);
-        FacturaResponse r = ventaService.toResponse(factura);
-        EntityModel<FacturaResponse> model = EntityModel.of(r);
-        model.add(linkTo(methodOn(VentaController.class)
-                .obtenerFactura(factura.getIdFactura())).withSelfRel());
-        return ResponseEntity.status(HttpStatus.CREATED).body(model);
+        return ResponseEntity.status(HttpStatus.CREATED).body(ventaService.toResponse(factura));
     }
 
     @Operation(summary = "Obtener una factura por ID")
@@ -151,13 +122,9 @@ public class VentaController {
             @ApiResponse(responseCode = "404", description = "Factura no encontrada", content = @Content)
     })
     @GetMapping("/facturas/{idFactura}")
-    public ResponseEntity<EntityModel<FacturaResponse>> obtenerFactura(
+    public ResponseEntity<FacturaResponse> obtenerFactura(
             @Parameter(description = "ID de la factura", example = "1", required = true) @PathVariable Long idFactura) {
         Factura factura = ventaService.obtenerFactura(idFactura);
-        FacturaResponse r = ventaService.toResponse(factura);
-        EntityModel<FacturaResponse> model = EntityModel.of(r);
-        model.add(linkTo(methodOn(VentaController.class)
-                .obtenerFactura(idFactura)).withSelfRel());
-        return ResponseEntity.ok(model);
+        return ResponseEntity.ok(ventaService.toResponse(factura));
     }
 }

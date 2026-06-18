@@ -17,17 +17,12 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import org.springframework.hateoas.CollectionModel;
-import org.springframework.hateoas.EntityModel;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
-
-import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.*;
 
 @RestController
 @RequestMapping("/api/pedidos")
@@ -50,25 +45,23 @@ public class PedidoController {
             @ApiResponse(responseCode = "409", description = "Stock insuficiente", content = @Content)
     })
     @PostMapping("/desde-carrito/{idCarrito}")
-    public ResponseEntity<EntityModel<PedidoResponse>> crearDesdeCarrito(
+    public ResponseEntity<PedidoResponse> crearDesdeCarrito(
             @Parameter(description = "ID del carrito", example = "1", required = true) @PathVariable Long idCarrito,
             @Valid @RequestBody CrearPedidoRequest request) {
         Pedido pedido = pedidoService.crearDesdeCarrito(idCarrito, request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(toModel(pedidoService.toResponse(pedido)));
+        return ResponseEntity.status(HttpStatus.CREATED).body(pedidoService.toResponse(pedido));
     }
 
     @Operation(summary = "Listar todos los pedidos")
     @ApiResponse(responseCode = "200", description = "Listado de pedidos",
             content = @Content(schema = @Schema(implementation = PedidoResponse.class)))
     @GetMapping
-    public ResponseEntity<CollectionModel<EntityModel<PedidoResponse>>> listarPedidos() {
-        List<EntityModel<PedidoResponse>> pedidos = pedidoService.listarPedidos()
+    public ResponseEntity<List<PedidoResponse>> listarPedidos() {
+        List<PedidoResponse> pedidos = pedidoService.listarPedidos()
                 .stream()
-                .map(p -> toModel(pedidoService.toResponse(p)))
-                .collect(Collectors.toList());
-        CollectionModel<EntityModel<PedidoResponse>> collection = CollectionModel.of(pedidos);
-        collection.add(linkTo(methodOn(PedidoController.class).listarPedidos()).withSelfRel());
-        return ResponseEntity.ok(collection);
+                .map(pedidoService::toResponse)
+                .toList();
+        return ResponseEntity.ok(pedidos);
     }
 
     @Operation(summary = "Obtener un pedido por ID")
@@ -78,10 +71,10 @@ public class PedidoController {
             @ApiResponse(responseCode = "404", description = "Pedido no encontrado", content = @Content)
     })
     @GetMapping("/{idPedido}")
-    public ResponseEntity<EntityModel<PedidoResponse>> obtenerPedido(
+    public ResponseEntity<PedidoResponse> obtenerPedido(
             @Parameter(description = "ID del pedido", example = "1", required = true) @PathVariable Long idPedido) {
         Pedido pedido = pedidoService.obtenerPedido(idPedido);
-        return ResponseEntity.ok(toModel(pedidoService.toResponse(pedido)));
+        return ResponseEntity.ok(pedidoService.toResponse(pedido));
     }
 
     @Operation(summary = "Actualizar un pedido existente",
@@ -94,11 +87,11 @@ public class PedidoController {
             @ApiResponse(responseCode = "409", description = "Pedido no editable en su estado actual", content = @Content)
     })
     @PutMapping("/{idPedido}")
-    public ResponseEntity<EntityModel<PedidoResponse>> actualizarPedido(
+    public ResponseEntity<PedidoResponse> actualizarPedido(
             @Parameter(description = "ID del pedido", example = "1", required = true) @PathVariable Long idPedido,
             @Valid @RequestBody CrearPedidoRequest request) {
         Pedido pedido = pedidoService.actualizarPedido(idPedido, request);
-        return ResponseEntity.ok(toModel(pedidoService.toResponse(pedido)));
+        return ResponseEntity.ok(pedidoService.toResponse(pedido));
     }
 
     @Operation(summary = "Eliminar un pedido")
@@ -138,16 +131,13 @@ public class PedidoController {
     @ApiResponse(responseCode = "200", description = "Historial de pedidos del cliente",
             content = @Content(schema = @Schema(implementation = PedidoResponse.class)))
     @GetMapping("/clientes/{idCliente}/historial")
-    public ResponseEntity<CollectionModel<EntityModel<PedidoResponse>>> historialCliente(
+    public ResponseEntity<List<PedidoResponse>> historialCliente(
             @Parameter(description = "ID del cliente", example = "10", required = true) @PathVariable Long idCliente) {
-        List<EntityModel<PedidoResponse>> pedidos = pedidoService.historialCliente(idCliente)
+        List<PedidoResponse> pedidos = pedidoService.historialCliente(idCliente)
                 .stream()
-                .map(p -> toModel(pedidoService.toResponse(p)))
-                .collect(Collectors.toList());
-        CollectionModel<EntityModel<PedidoResponse>> collection = CollectionModel.of(pedidos);
-        collection.add(linkTo(methodOn(PedidoController.class)
-                .historialCliente(idCliente)).withSelfRel());
-        return ResponseEntity.ok(collection);
+                .map(pedidoService::toResponse)
+                .toList();
+        return ResponseEntity.ok(pedidos);
     }
 
     @Operation(summary = "Cancelar un pedido",
@@ -159,12 +149,12 @@ public class PedidoController {
             @ApiResponse(responseCode = "409", description = "Pedido no se puede cancelar en su estado actual", content = @Content)
     })
     @PatchMapping("/{idPedido}/cancelar")
-    public ResponseEntity<EntityModel<PedidoResponse>> cancelarPedido(
+    public ResponseEntity<PedidoResponse> cancelarPedido(
             @Parameter(description = "ID del pedido", example = "1", required = true) @PathVariable Long idPedido,
             @RequestBody(required = false) CancelarPedidoRequest request) {
         String motivo = request != null ? request.getMotivo() : null;
         Pedido pedido = pedidoService.cancelarPedido(idPedido, motivo);
-        return ResponseEntity.ok(toModel(pedidoService.toResponse(pedido)));
+        return ResponseEntity.ok(pedidoService.toResponse(pedido));
     }
 
     @Operation(summary = "Crear una reclamacion asociada a un pedido")
@@ -175,14 +165,11 @@ public class PedidoController {
             @ApiResponse(responseCode = "404", description = "Pedido no encontrado", content = @Content)
     })
     @PostMapping("/{idPedido}/reclamaciones")
-    public ResponseEntity<EntityModel<Reclamacion>> crearReclamacion(
+    public ResponseEntity<Reclamacion> crearReclamacion(
             @Parameter(description = "ID del pedido", example = "1", required = true) @PathVariable Long idPedido,
             @Valid @RequestBody CrearReclamacionRequest request) {
         Reclamacion reclamacion = pedidoService.crearReclamacionPorPedido(idPedido, request);
-        EntityModel<Reclamacion> model = EntityModel.of(reclamacion);
-        model.add(linkTo(methodOn(PedidoController.class)
-                .listarReclamaciones(idPedido)).withRel("reclamaciones"));
-        return ResponseEntity.status(HttpStatus.CREATED).body(model);
+        return ResponseEntity.status(HttpStatus.CREATED).body(reclamacion);
     }
 
     @Operation(summary = "Listar las reclamaciones de un pedido")
@@ -192,16 +179,5 @@ public class PedidoController {
     public ResponseEntity<List<Reclamacion>> listarReclamaciones(
             @Parameter(description = "ID del pedido", example = "1", required = true) @PathVariable Long idPedido) {
         return ResponseEntity.ok(pedidoService.listarReclamacionesPorPedido(idPedido));
-    }
-
-    private EntityModel<PedidoResponse> toModel(PedidoResponse response) {
-        EntityModel<PedidoResponse> model = EntityModel.of(response);
-        model.add(linkTo(methodOn(PedidoController.class)
-                .obtenerPedido(response.getIdPedido())).withSelfRel());
-        model.add(linkTo(methodOn(PedidoController.class)
-                .consultarEstado(response.getIdPedido())).withRel("estado"));
-        model.add(linkTo(methodOn(PedidoController.class)
-                .historialCliente(response.getIdCliente())).withRel("historial"));
-        return model;
     }
 }

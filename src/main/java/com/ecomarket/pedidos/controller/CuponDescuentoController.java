@@ -10,16 +10,12 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import org.springframework.hateoas.EntityModel;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-
-import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
-import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
 
 @RestController
 @RequestMapping("/api/pedidos/cupones")
@@ -41,11 +37,8 @@ public class CuponDescuentoController {
             @ApiResponse(responseCode = "409", description = "Codigo de cupon duplicado", content = @Content)
     })
     @PostMapping
-    public ResponseEntity<EntityModel<CuponDescuentoResponse>> crearCupon(@Valid @RequestBody CuponDescuento cuponDescuento) {
+    public ResponseEntity<CuponDescuentoResponse> crearCupon(@Valid @RequestBody CuponDescuento cuponDescuento) {
         CuponDescuento creado = cuponDescuentoService.crearCupon(cuponDescuento);
-        CuponDescuentoResponse response = cuponDescuentoService.toResponse(creado);
-        EntityModel<CuponDescuentoResponse> model = EntityModel.of(response);
-        model.add(linkTo(methodOn(CuponDescuentoController.class).crearCupon(cuponDescuento)).withSelfRel());
-        return ResponseEntity.status(HttpStatus.CREATED).body(model);
+        return ResponseEntity.status(HttpStatus.CREATED).body(cuponDescuentoService.toResponse(creado));
     }
 }
