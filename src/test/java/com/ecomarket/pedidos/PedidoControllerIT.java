@@ -10,6 +10,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.when;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
@@ -17,8 +18,9 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
+@ActiveProfiles("test")
 @Transactional
-class MsPedidosVentasApplicationTests {
+class PedidoControllerIT {
 
     @Autowired private CarritoService carritoService;
     @Autowired private PedidoService pedidoService;
@@ -32,8 +34,7 @@ class MsPedidosVentasApplicationTests {
 
     @BeforeEach
     void setUp() {
-        // Stubs para que la validacion contra MS dependientes no falle en tests unitarios
-        when(inventarioClientService.consultarStock(anyLong())).thenReturn(java.util.Map.of("stockActual", 1000));
+                when(inventarioClientService.consultarStock(anyLong())).thenReturn(java.util.Map.of("stockActual", 1000));
         when(catalogoClientService.obtenerProducto(anyLong())).thenReturn(java.util.Map.of("idProducto", 1, "precio", 1000.0));
         when(inventarioClientService.descontarStock(anyLong(), org.mockito.ArgumentMatchers.anyInt(), org.mockito.ArgumentMatchers.anyString())).thenReturn(true);
         CarritoCompra carrito = carritoService.crearCarrito(1L);
@@ -267,7 +268,7 @@ class MsPedidosVentasApplicationTests {
         recReq.setIdCliente(1L);
         recReq.setIdPedido(pedido.getIdPedido());
         recReq.setMotivo("Pedido con problema");
-        recReq.setDescripcion("Reclamación de prueba");
+        recReq.setDescripcion("ReclamaciÃƒÂ³n de prueba");
         Reclamacion reclamacion = devolucionService.crearReclamacion(recReq);
         assertThrows(org.springframework.web.server.ResponseStatusException.class, () ->
                 devolucionService.actualizarEstadoReclamacion(
