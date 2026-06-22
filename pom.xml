@@ -169,9 +169,9 @@
                     <excludes>
                         <exclude>**/dto/**</exclude>
                         <exclude>**/model/**</exclude>
-                        <exclude>**/*Application*</exclude>
                         <exclude>**/config/**</exclude>
                         <exclude>**/exception/**</exclude>
+                        <exclude>**/service/*ClientService*</exclude>
                     </excludes>
                 </configuration>
             </plugin>
