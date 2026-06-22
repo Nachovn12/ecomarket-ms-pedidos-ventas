@@ -2,6 +2,7 @@ package com.ecomarket.pedidos.controller;
 
 import com.ecomarket.pedidos.dto.AgregarItemCarritoRequest;
 import com.ecomarket.pedidos.dto.ActualizarCantidadRequest;
+import com.ecomarket.pedidos.dto.AplicarCuponRequest;
 import com.ecomarket.pedidos.dto.CarritoResponse;
 import com.ecomarket.pedidos.dto.CrearCarritoRequest;
 import com.ecomarket.pedidos.exception.RecursoNoEncontradoException;
@@ -192,5 +193,121 @@ class CarritoControllerTest {
         mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete(url))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.idCarrito", is(1)));
+    }
+
+    // --- Tests de caminos de error (Branch Coverage) ---
+
+    @Test
+    void testAgregarItem_carritoNoExistente_retorna404() throws Exception {
+        // Regla: No se puede agregar un producto a un carrito que no existe.
+        when(carritoService.agregarItem(anyLong(), any(AgregarItemCarritoRequest.class)))
+                .thenThrow(new RecursoNoEncontradoException("Carrito no encontrado con id: 99"));
+
+        AgregarItemCarritoRequest req = new AgregarItemCarritoRequest();
+        req.setIdProducto(1L);
+        req.setNombreProducto("Bolsa biodegradable");
+        req.setCantidad(1);
+        req.setPrecioUnitario(1990.0);
+        req.setStockDisponible(10);
+
+        mockMvc.perform(post("/api/pedidos/carritos/99/items")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(req)))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void testAgregarItem_stockInsuficiente_retorna409() throws Exception {
+        // Regla: Un cliente no puede agregar al carrito mas unidades que el stock disponible del producto.
+        when(carritoService.agregarItem(anyLong(), any(AgregarItemCarritoRequest.class)))
+                .thenThrow(new com.ecomarket.pedidos.exception.StockInsuficienteException(
+                        "Stock insuficiente para producto id=100. Disponible: 3, solicitado: 10"));
+
+        AgregarItemCarritoRequest req = new AgregarItemCarritoRequest();
+        req.setIdProducto(100L);
+        req.setNombreProducto("Bolsa biodegradable");
+        req.setCantidad(10);
+        req.setPrecioUnitario(1990.0);
+        req.setStockDisponible(3);
+
+        mockMvc.perform(post("/api/pedidos/carritos/1/items")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(req)))
+                .andExpect(status().isConflict());
+    }
+
+    @Test
+    void testActualizarCantidad_itemNoExistente_retorna404() throws Exception {
+        // Regla: No se puede modificar un item que no pertenece al carrito del cliente.
+        when(carritoService.actualizarCantidad(anyLong(), anyLong(), any(ActualizarCantidadRequest.class)))
+                .thenThrow(new RecursoNoEncontradoException("Item no encontrado con id: 99 en carrito: 1"));
+
+        ActualizarCantidadRequest req = new ActualizarCantidadRequest();
+        req.setCantidad(2);
+        req.setStockDisponible(10);
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                        .put("/api/pedidos/carritos/1/items/99")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(req)))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void testActualizarCantidad_cantidadNegativa_retorna400() throws Exception {
+        // Regla: La cantidad de un item en el carrito debe ser mayor a cero.
+        when(carritoService.actualizarCantidad(anyLong(), anyLong(), any(ActualizarCantidadRequest.class)))
+                .thenThrow(new IllegalArgumentException("La cantidad debe ser mayor a cero"));
+
+        ActualizarCantidadRequest req = new ActualizarCantidadRequest();
+        req.setCantidad(-1);
+        req.setStockDisponible(10);
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                        .put("/api/pedidos/carritos/1/items/10")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(req)))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void testEliminarItem_itemNoExistente_retorna404() throws Exception {
+        // Regla: No se puede eliminar un item que no existe en el carrito del cliente.
+        when(carritoService.eliminarItem(anyLong(), anyLong()))
+                .thenThrow(new RecursoNoEncontradoException("Item no encontrado con id: 99 en carrito: 1"));
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                        .delete("/api/pedidos/carritos/1/items/99"))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void testAplicarCupon_cuponInvalido_retorna400() throws Exception {
+        // Regla: Un cupon invalido, expirado o ya utilizado no debe aplicarse al carrito.
+        when(carritoService.aplicarCupon(anyLong(), any()))
+                .thenThrow(new IllegalArgumentException("Cupon ECOXXXX es invalido o ha expirado"));
+
+        AplicarCuponRequest req = new AplicarCuponRequest();
+        req.setCodigo("ECOXXXX");
+
+        mockMvc.perform(post("/api/pedidos/carritos/1/cupon")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(req)))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void testAplicarCupon_carritoNoExistente_retorna404() throws Exception {
+        // Regla: No se puede aplicar cupon a un carrito que no existe.
+        when(carritoService.aplicarCupon(anyLong(), any()))
+                .thenThrow(new RecursoNoEncontradoException("Carrito no encontrado con id: 99"));
+
+        AplicarCuponRequest req = new AplicarCuponRequest();
+        req.setCodigo("ECO10");
+
+        mockMvc.perform(post("/api/pedidos/carritos/99/cupon")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(req)))
+                .andExpect(status().isNotFound());
     }
 }

@@ -243,4 +243,121 @@ class PedidoControllerTest {
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.idReclamacion", is(7)));
     }
+
+    // --- Tests de caminos de error (Branch Coverage) ---
+
+    @Test
+    void testCrearDesdeCarrito_carritoNoExistente_retorna404() throws Exception {
+        // Regla: No se puede generar un pedido desde un carrito que no existe en el sistema.
+        Long idCarrito = 99L;
+        when(pedidoService.crearDesdeCarrito(eq(idCarrito), any(CrearPedidoRequest.class)))
+                .thenThrow(new RecursoNoEncontradoException("Carrito no encontrado con id: 99"));
+
+        CrearPedidoRequest req = new CrearPedidoRequest();
+        req.setIdCliente(10L);
+        req.setMetodoPago(MetodoPago.TARJETA);
+        req.setDireccionEntrega("Av. Siempre Viva 742, Santiago");
+
+        mockMvc.perform(post("/api/pedidos/desde-carrito/" + idCarrito)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(req)))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void testCancelarPedido_estadoNoPermitido_retorna409() throws Exception {
+        // Regla: Solo se pueden cancelar pedidos en estado PENDIENTE.
+        // Un pedido ya ENTREGADO no puede ser cancelado.
+        Long idPedido = 5L;
+        when(pedidoService.cancelarPedido(eq(idPedido), any()))
+                .thenThrow(new IllegalStateException(
+                        "Solo se pueden cancelar pedidos en estado PENDIENTE. Estado actual: ENTREGADO"));
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                        .patch("/api/pedidos/" + idPedido + "/cancelar")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"motivo\":\"intento invalido\"}"))
+                .andExpect(status().isConflict());
+    }
+
+    @Test
+    void testActualizarPedido_estadoCancelado_retorna400() throws Exception {
+        // Regla: No se pueden modificar pedidos que ya fueron cancelados.
+        when(pedidoService.actualizarPedido(eq(99L), any(CrearPedidoRequest.class)))
+                .thenThrow(new IllegalArgumentException(
+                        "No se puede modificar un pedido en estado CANCELADO"));
+
+        CrearPedidoRequest req = new CrearPedidoRequest();
+        req.setIdCliente(10L);
+        req.setMetodoPago(MetodoPago.EFECTIVO);
+        req.setDireccionEntrega("");
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                        .put("/api/pedidos/99")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(req)))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void testConsultarEstado_pedidoNoExistente_retorna400() throws Exception {
+        // Regla: No se puede consultar el estado de un pedido que no existe.
+        when(pedidoService.consultarEstado(99L))
+                .thenThrow(new IllegalArgumentException("Pedido no encontrado con id: 99"));
+
+        mockMvc.perform(get("/api/pedidos/99/estado"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void testCrearDesdeCarrito_stockInsuficiente_retorna409() throws Exception {
+        // Regla: Si al confirmar el pedido un producto no tiene stock suficiente, se rechaza la operacion.
+        Long idCarrito = 1L;
+        when(pedidoService.crearDesdeCarrito(eq(idCarrito), any(CrearPedidoRequest.class)))
+                .thenThrow(new com.ecomarket.pedidos.exception.StockInsuficienteException(
+                        "Stock insuficiente para 'Bolsa biodegradable'. Disponible: 1, requerido: 5"));
+
+        CrearPedidoRequest req = new CrearPedidoRequest();
+        req.setIdCliente(10L);
+        req.setMetodoPago(MetodoPago.TARJETA);
+        req.setDireccionEntrega("Av. Siempre Viva 742, Santiago");
+
+        mockMvc.perform(post("/api/pedidos/desde-carrito/" + idCarrito)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(req)))
+                .andExpect(status().isConflict());
+    }
+
+    @Test
+    void testCancelarPedido_sinMotivo_retorna200() throws Exception {
+        // Regla: Si el cliente cancela el pedido pero no provee un motivo explícito,
+        // el sistema lo permite y asume motivo null (o predeterminado en el service).
+        Long idPedido = 1L;
+        Pedido cancelado = pedidoMock(idPedido, 10L, EstadoPedido.CANCELADO, 1000.0, 190.0, 1000.0);
+        PedidoResponse respCancelado = pedidoResponseMock(idPedido, 10L, EstadoPedido.CANCELADO, 1000.0, 190.0, 1000.0);
+        
+        when(pedidoService.cancelarPedido(eq(idPedido), eq(null))).thenReturn(cancelado);
+        when(pedidoService.toResponse(cancelado)).thenReturn(respCancelado);
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                        .patch("/api/pedidos/" + idPedido + "/cancelar"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.estado", is("CANCELADO")));
+    }
+
+    @Test
+    void testListarReclamaciones_deUnPedido() throws Exception {
+        // Regla: El cliente o empleado puede consultar todas las reclamaciones asociadas a un pedido específico.
+        com.ecomarket.pedidos.model.Reclamacion rec = new com.ecomarket.pedidos.model.Reclamacion();
+        rec.setIdReclamacion(7L);
+        rec.setIdPedido(1L);
+        rec.setMotivo("Producto llego aplastado");
+        
+        when(pedidoService.listarReclamacionesPorPedido(1L)).thenReturn(List.of(rec));
+
+        mockMvc.perform(get("/api/pedidos/1/reclamaciones"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(1)))
+                .andExpect(jsonPath("$[0].motivo", is("Producto llego aplastado")));
+    }
 }

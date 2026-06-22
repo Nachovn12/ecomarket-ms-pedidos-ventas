@@ -218,4 +218,64 @@ class DevolucionControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.estado", is("EN_REVISION")));
     }
+
+    // --- Tests de caminos de error (Branch Coverage) ---
+
+    @Test
+    void testObtenerDevolucionExistente_retorna200() throws Exception {
+        // Camino feliz faltante: un empleado consulta una devolucion existente en el sistema.
+        Devolucion d = devolucionMock(1L, "APROBADA");
+        DevolucionResponse resp = devolucionResponseMock(1L, "APROBADA");
+        when(devolucionService.obtenerDevolucion(1L)).thenReturn(d);
+        when(devolucionService.toResponse(d)).thenReturn(resp);
+
+        mockMvc.perform(get("/api/pedidos/devoluciones/1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.idDevolucion", is(1)))
+                .andExpect(jsonPath("$.estado", is("APROBADA")));
+    }
+
+    @Test
+    void testActualizarEstadoDevolucion_estadoInvalido_retorna400() throws Exception {
+        // Regla: Solo se aceptan estados validos para devoluciones: APROBADA, RECHAZADA, EN_REVISION.
+        when(devolucionService.actualizarEstadoDevolucion(any(Long.class), any(String.class)))
+                .thenThrow(new IllegalArgumentException(
+                        "Estado invalido: ESTADO_INCORRECTO. Valores validos: APROBADA, RECHAZADA, EN_REVISION"));
+
+        ActualizarEstadoDevolucionRequest req = new ActualizarEstadoDevolucionRequest();
+        req.setEstado("ESTADO_INCORRECTO");
+
+        mockMvc.perform(patch("/api/pedidos/devoluciones/1/estado")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(req)))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void testObtenerReclamacion_noExistente_retorna404() throws Exception {
+        // Regla: Si el cliente solicita el detalle de una reclamacion que no existe, se retorna 404.
+        when(devolucionService.obtenerReclamacion(99L))
+                .thenThrow(new com.ecomarket.pedidos.exception.RecursoNoEncontradoException(
+                        "Reclamacion no encontrada con id: 99"));
+
+        mockMvc.perform(get("/api/pedidos/reclamaciones/99"))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void testActualizarEstadoReclamacion_estadoInvalido_retorna400() throws Exception {
+        // Regla: Solo se aceptan estados validos para reclamaciones: ABIERTA, EN_REVISION, RESUELTA, CERRADA.
+        when(devolucionService.actualizarEstadoReclamacion(any(Long.class), any()))
+                .thenThrow(new IllegalArgumentException(
+                        "Estado invalido: FAKE. Valores validos: ABIERTA, EN_REVISION, RESUELTA, CERRADA"));
+
+        com.ecomarket.pedidos.dto.ActualizarEstadoReclamacionRequest req =
+                new com.ecomarket.pedidos.dto.ActualizarEstadoReclamacionRequest();
+        req.setEstado("FAKE");
+
+        mockMvc.perform(patch("/api/pedidos/reclamaciones/1/estado")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(req)))
+                .andExpect(status().isBadRequest());
+    }
 }
