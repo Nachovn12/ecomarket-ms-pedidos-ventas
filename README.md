@@ -83,10 +83,11 @@ cd .\ms-pedidos-ventas\
 .\mvnw.cmd test
 ```
 
-O desde la raiz:
+O entrando al directorio (recomendado):
 
 ```powershell
-.\ms-pedidos-ventas\mvnw.cmd -f ms-pedidos-ventas/pom.xml clean test
+cd .\ms-pedidos-ventas\
+.\mvnw.cmd clean test
 ```
 
 ## Endpoints principales

@@ -293,4 +293,121 @@ class VentaServiceTest {
         assertThrows(IllegalArgumentException.class,
                 () -> ventaService.obtenerFactura(99L));
     }
+
+    @Test
+    void registrarVentaPresencial_descuentoNegativo_lanzaExcepcion() {
+        ItemVentaRequest it = item(100L, "Bolsa", 2, 1000.0);
+        CrearVentaRequest req = ventaRequest(10L, List.of(it));
+        req.setDescuento(-500.0);
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, 
+            () -> ventaService.registrarVentaPresencial(req));
+        assertTrue(ex.getMessage().contains("negativo"));
+    }
+
+    @Test
+    void registrarVentaPresencial_descuentoMayorAlSubtotal_lanzaExcepcion() {
+        ItemVentaRequest it = item(100L, "Bolsa", 2, 1000.0);
+        CrearVentaRequest req = ventaRequest(10L, List.of(it));
+        req.setDescuento(3000.0);
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, 
+            () -> ventaService.registrarVentaPresencial(req));
+        assertTrue(ex.getMessage().contains("superar"));
+    }
+
+    @Test
+    void registrarVentaPresencial_inventarioNulo_lanzaExcepcion() {
+        ItemVentaRequest it = item(100L, "Bolsa", 2, 1000.0);
+        CrearVentaRequest req = ventaRequest(10L, List.of(it));
+        when(ventaRepository.save(any(Venta.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(inventarioClientService.consultarStock(100L)).thenReturn(null);
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, 
+            () -> ventaService.registrarVentaPresencial(req));
+        assertTrue(ex.getMessage().contains("no existe"));
+    }
+
+    @Test
+    void registrarVentaPresencial_stockObjectEnLugarDeStockActual_OK() {
+        ItemVentaRequest it = item(100L, "Bolsa", 2, 1000.0);
+        CrearVentaRequest req = ventaRequest(10L, List.of(it));
+        when(ventaRepository.save(any(Venta.class))).thenAnswer(inv -> {
+            Venta v = inv.getArgument(0);
+            v.setIdVenta(55L);
+            return v;
+        });
+        when(inventarioClientService.consultarStock(100L)).thenReturn(Map.of("stock", 50));
+        when(inventarioClientService.descontarStock(anyLong(), anyInt(), anyString())).thenReturn(true);
+
+        Venta resultado = ventaService.registrarVentaPresencial(req);
+        assertEquals(2000.0, resultado.getSubtotal());
+    }
+
+    @Test
+    void registrarVentaPresencial_descontarStockFalla_soloLogueaAdvertencia() {
+        ItemVentaRequest it = item(100L, "Bolsa", 2, 1000.0);
+        CrearVentaRequest req = ventaRequest(10L, List.of(it));
+        when(ventaRepository.save(any(Venta.class))).thenAnswer(inv -> {
+            Venta v = inv.getArgument(0);
+            v.setIdVenta(55L);
+            return v;
+        });
+        when(inventarioClientService.consultarStock(100L)).thenReturn(Map.of("stockActual", 50));
+        when(inventarioClientService.descontarStock(anyLong(), anyInt(), anyString())).thenReturn(false);
+
+        Venta resultado = ventaService.registrarVentaPresencial(req);
+        assertEquals(2000.0, resultado.getSubtotal());
+        verify(inventarioClientService, times(1)).descontarStock(anyLong(), anyInt(), anyString());
+    }
+
+    @Test
+    void actualizarVenta_descuentoNulo_asumeCero() {
+        Venta existente = new Venta();
+        existente.setIdVenta(1L);
+        when(ventaRepository.findById(1L)).thenReturn(Optional.of(existente));
+        when(ventaRepository.save(any(Venta.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        ItemVentaRequest it = item(1L, "", 2, 500.0);
+        CrearVentaRequest req = ventaRequest(10L, List.of(it));
+        req.setDescuento(null);
+
+        Venta resultado = ventaService.actualizarVenta(1L, req);
+        assertEquals(1000.0, resultado.getSubtotal());
+        assertEquals(0.0, resultado.getDescuento());
+    }
+
+    @Test
+    void toResponse_ventaNull_retornaNull() {
+        com.ecomarket.pedidos.dto.VentaResponse resp = ventaService.toResponse((Venta) null);
+        assertTrue(resp == null);
+    }
+
+    @Test
+    void toResponse_venta_mapeoCompleto() {
+        Venta v = new Venta();
+        v.setIdVenta(10L);
+        v.setIdCliente(5L);
+        v.setTotal(1500.0);
+        com.ecomarket.pedidos.dto.VentaResponse resp = ventaService.toResponse(v);
+        assertEquals(10L, resp.getIdVenta());
+        assertEquals(5L, resp.getIdCliente());
+        assertEquals(1500.0, resp.getTotal());
+    }
+
+    @Test
+    void toResponse_facturaNull_retornaNull() {
+        com.ecomarket.pedidos.dto.FacturaResponse resp = ventaService.toResponse((Factura) null);
+        assertTrue(resp == null);
+    }
+
+    @Test
+    void toResponse_factura_mapeoCompleto() {
+        Factura f = new Factura();
+        f.setIdFactura(20L);
+        f.setRutCliente("11-1");
+        com.ecomarket.pedidos.dto.FacturaResponse resp = ventaService.toResponse(f);
+        assertEquals(20L, resp.getIdFactura());
+        assertEquals("11-1", resp.getRutCliente());
+    }
 }

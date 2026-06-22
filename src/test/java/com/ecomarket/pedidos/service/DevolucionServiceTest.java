@@ -212,4 +212,32 @@ class DevolucionServiceTest {
         assertEquals("Llego 5 dias tarde", resp.getDescripcion());
         assertEquals("EN_REVISION", resp.getEstado());
     }
+
+    @Test
+    void actualizarEstadoReclamacion_estadoNulo_lanza400() {
+        Long idRec = 1L;
+        Reclamacion rec = new Reclamacion();
+        rec.setIdReclamacion(idRec);
+        rec.setIdCliente(10L);
+        when(reclamacionRepository.findById(idRec)).thenReturn(Optional.of(rec));
+
+        ResponseStatusException ex = assertThrows(ResponseStatusException.class,
+                () -> devolucionService.actualizarEstadoReclamacion(idRec, null));
+
+        assertEquals(HttpStatus.BAD_REQUEST, ex.getStatusCode());
+        assertTrue(ex.getReason() != null && ex.getReason().toLowerCase().contains("obligatorio"));
+        verify(reclamacionRepository, never()).save(any(Reclamacion.class));
+    }
+
+    @Test
+    void toResponse_devolucionNull_retornaNull() {
+        com.ecomarket.pedidos.dto.DevolucionResponse resp = devolucionService.toResponse((Devolucion) null);
+        assertTrue(resp == null);
+    }
+
+    @Test
+    void toResponse_reclamacionNull_retornaNull() {
+        com.ecomarket.pedidos.dto.ReclamacionResponse resp = devolucionService.toResponse((Reclamacion) null);
+        assertTrue(resp == null);
+    }
 }

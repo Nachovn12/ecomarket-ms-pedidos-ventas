@@ -417,4 +417,102 @@ class PedidoServiceTest {
         assertEquals(2, historial.size());
         verify(historialPedidoRepository, times(1)).findByIdPedidoOrderByFechaCambioDesc(1L);
     }
+
+    @Test
+    void crearDesdeCarrito_inventarioDevuelveNulo_lanzaException() {
+        Long idCarrito = 1L;
+        CarritoCompra carrito = carritoActivoConItem(idCarrito, 10L, 100L, "Bolsa", 2, 1990.0);
+        when(carritoCompraRepository.findById(idCarrito)).thenReturn(Optional.of(carrito));
+        when(inventarioClientService.consultarStock(100L)).thenReturn(null);
+
+        RecursoNoEncontradoException ex = assertThrows(RecursoNoEncontradoException.class,
+                () -> pedidoService.crearDesdeCarrito(idCarrito, requestBasico()));
+        assertTrue(ex.getMessage().contains("no existe"));
+    }
+
+    @Test
+    void crearDesdeCarrito_inventarioDevuelveStockEnLugarDeStockActual() {
+        Long idCarrito = 1L;
+        CarritoCompra carrito = carritoActivoConItem(idCarrito, 10L, 100L, "Bolsa", 2, 1990.0);
+        when(carritoCompraRepository.findById(idCarrito)).thenReturn(Optional.of(carrito));
+        when(inventarioClientService.consultarStock(100L)).thenReturn(Map.of("stock", 50));
+        when(catalogoClientService.obtenerProducto(100L)).thenReturn(Map.of("idProducto", 100));
+        when(pedidoRepository.save(any(Pedido.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        Pedido p = pedidoService.crearDesdeCarrito(idCarrito, requestBasico());
+        assertNotNull(p);
+    }
+
+    @Test
+    void crearDesdeCarrito_inventarioNoDevuelveStock_capturaIllegalStateExceptionYContinua() {
+        Long idCarrito = 1L;
+        CarritoCompra carrito = carritoActivoConItem(idCarrito, 10L, 100L, "Bolsa", 2, 1990.0);
+        when(carritoCompraRepository.findById(idCarrito)).thenReturn(Optional.of(carrito));
+        when(inventarioClientService.consultarStock(100L)).thenReturn(Map.of());
+        when(pedidoRepository.save(any(Pedido.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        Pedido p = pedidoService.crearDesdeCarrito(idCarrito, requestBasico());
+        assertNotNull(p);
+    }
+
+    @Test
+    void crearDesdeCarrito_stockInsuficiente_lanzaException() {
+        Long idCarrito = 1L;
+        CarritoCompra carrito = carritoActivoConItem(idCarrito, 10L, 100L, "Bolsa", 20, 1990.0);
+        when(carritoCompraRepository.findById(idCarrito)).thenReturn(Optional.of(carrito));
+        when(inventarioClientService.consultarStock(100L)).thenReturn(Map.of("stockActual", 5));
+
+        com.ecomarket.pedidos.exception.StockInsuficienteException ex = assertThrows(
+                com.ecomarket.pedidos.exception.StockInsuficienteException.class,
+                () -> pedidoService.crearDesdeCarrito(idCarrito, requestBasico()));
+        assertTrue(ex.getMessage().contains("insuficiente"));
+    }
+
+    @Test
+    void crearDesdeCarrito_catalogoDevuelveNulo_lanzaException() {
+        Long idCarrito = 1L;
+        CarritoCompra carrito = carritoActivoConItem(idCarrito, 10L, 100L, "Bolsa", 2, 1990.0);
+        when(carritoCompraRepository.findById(idCarrito)).thenReturn(Optional.of(carrito));
+        when(inventarioClientService.consultarStock(100L)).thenReturn(Map.of("stockActual", 50));
+        when(catalogoClientService.obtenerProducto(100L)).thenReturn(null);
+
+        RecursoNoEncontradoException ex = assertThrows(RecursoNoEncontradoException.class,
+                () -> pedidoService.crearDesdeCarrito(idCarrito, requestBasico()));
+        assertTrue(ex.getMessage().contains("catalogo"));
+    }
+
+    @Test
+    void actualizarPedido_pedidoENTREGADO_lanzaExcepcion() {
+        Pedido p = new Pedido();
+        p.setIdPedido(1L);
+        p.setEstado(EstadoPedido.ENTREGADO);
+        when(pedidoRepository.findById(1L)).thenReturn(Optional.of(p));
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> pedidoService.actualizarPedido(1L, requestBasico()));
+        assertTrue(ex.getMessage().contains("ENTREGADO"));
+    }
+
+    @Test
+    void cancelarPedido_motivoVacio_usaMensajeDefecto() {
+        Pedido p = new Pedido();
+        p.setIdPedido(1L);
+        p.setEstado(EstadoPedido.PENDIENTE);
+        when(pedidoRepository.findById(1L)).thenReturn(Optional.of(p));
+        when(pedidoRepository.save(any(Pedido.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        Pedido cancelado = pedidoService.cancelarPedido(1L, "");
+        assertTrue(cancelado.getObservaciones().contains("sin motivo"));
+    }
+
+    @Test
+    void toResponse_pedido_mapeoOK() {
+        Pedido p = new Pedido();
+        p.setIdPedido(10L);
+        p.setIdCliente(5L);
+        p.setTotal(1500.0);
+        PedidoResponse resp = pedidoService.toResponse(p);
+        assertEquals(10L, resp.getIdPedido());
+        assertEquals(5L, resp.getIdCliente());
+    }
 }
