@@ -4,6 +4,7 @@ import com.ecomarket.pedidos.dto.CrearVentaRequest;
 import com.ecomarket.pedidos.dto.FacturaResponse;
 import com.ecomarket.pedidos.dto.ItemVentaRequest;
 import com.ecomarket.pedidos.dto.VentaResponse;
+import com.ecomarket.pedidos.exception.RecursoNoEncontradoException;
 import com.ecomarket.pedidos.model.MetodoPago;
 import com.ecomarket.pedidos.model.Venta;
 import com.ecomarket.pedidos.service.VentaService;
@@ -211,5 +212,102 @@ class VentaControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.idFactura", is(10)))
                 .andExpect(jsonPath("$.folio", is(1001)));
+    }
+
+    // --- Tests de caminos de error (Branch Coverage) ---
+
+    @Test
+    void testRegistrarVentaPresencial_stockInsuficiente_retorna409() throws Exception {
+        // Regla: El empleado de ventas no puede procesar una venta si no hay stock suficiente en bodega.
+        when(ventaService.registrarVentaPresencial(any(CrearVentaRequest.class)))
+                .thenThrow(new IllegalArgumentException(
+                        "Stock insuficiente para producto id=1. Disponible: 2, solicitado: 10"));
+
+        CrearVentaRequest req = ventaRequest(10L);
+
+        mockMvc.perform(post("/api/ventas/presencial")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(req)))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void testGenerarFactura_ventaYaFacturada_retorna409() throws Exception {
+        // Regla: Una venta solo puede tener una factura electronica. Si ya fue facturada, se rechaza.
+        when(ventaService.generarFactura(eq(1L), any(com.ecomarket.pedidos.dto.CrearFacturaRequest.class)))
+                .thenThrow(new IllegalStateException(
+                        "La venta id=1 ya tiene una factura generada. No se permite factura duplicada."));
+
+        com.ecomarket.pedidos.dto.CrearFacturaRequest req = new com.ecomarket.pedidos.dto.CrearFacturaRequest();
+        req.setIdCliente(10L);
+        req.setRutCliente("12.345.678-9");
+        req.setRazonSocial("EcoMarket SpA");
+
+        mockMvc.perform(post("/api/ventas/1/factura")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(req)))
+                .andExpect(status().isConflict());
+    }
+
+    @Test
+    void testGenerarFactura_sinBody_retorna201() throws Exception {
+        // Valida la rama request == null en el controller (asigna CrearFacturaRequest vacio).
+        com.ecomarket.pedidos.model.Factura f = new com.ecomarket.pedidos.model.Factura();
+        f.setIdFactura(5L);
+        f.setFolio(1002);
+        FacturaResponse resp = new FacturaResponse();
+        resp.setIdFactura(5L);
+        resp.setFolio(1002);
+        when(ventaService.generarFactura(eq(2L), any(com.ecomarket.pedidos.dto.CrearFacturaRequest.class)))
+                .thenReturn(f);
+        when(ventaService.toResponse(f)).thenReturn(resp);
+
+        mockMvc.perform(post("/api/ventas/2/factura")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.folio", is(1002)));
+    }
+
+    @Test
+    void testEliminarVenta_noExistente_retorna404() throws Exception {
+        // Regla: No se puede eliminar una venta que no existe en el sistema.
+        org.mockito.Mockito.doThrow(new RecursoNoEncontradoException("Venta no encontrada: 99"))
+                .when(ventaService).eliminarVenta(99L);
+
+        mockMvc.perform(delete("/api/ventas/99"))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void testObtenerFactura_noExistente_retorna400() throws Exception {
+        // Regla: Si se solicita una factura que no existe, el sistema retorna error.
+        when(ventaService.obtenerFactura(99L))
+                .thenThrow(new IllegalArgumentException("Factura no encontrada con id: 99"));
+
+        mockMvc.perform(get("/api/ventas/facturas/99"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void testActualizarVenta_noExistente_retorna404() throws Exception {
+        // Regla: No se puede actualizar una venta que no existe en el sistema.
+        when(ventaService.actualizarVenta(eq(99L), any(CrearVentaRequest.class)))
+                .thenThrow(new RecursoNoEncontradoException("Venta no encontrada con id: 99"));
+
+        CrearVentaRequest req = new CrearVentaRequest();
+        req.setIdCliente(10L);
+        req.setMetodoPago(MetodoPago.EFECTIVO);
+        ItemVentaRequest it = new ItemVentaRequest();
+        it.setIdProducto(1L);
+        it.setNombreProducto("Bolsa");
+        it.setCantidad(1);
+        it.setPrecioUnitario(1000.0);
+        req.setItems(List.of(it));
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                        .put("/api/ventas/99")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(req)))
+                .andExpect(status().isNotFound());
     }
 }
