@@ -277,4 +277,44 @@ class CarritoServiceTest {
         assertEquals(1, resp.getItems().size());
         assertEquals(100L, resp.getItems().get(0).getIdProducto());
     }
+
+    @Test
+    void listarCarritos_retornaLista() {
+        // Cubre linea 50: listarCarritos()
+        CarritoCompra c = carritoActivoVacio(1L, 10L);
+        when(carritoCompraRepository.findAll()).thenReturn(java.util.List.of(c));
+        java.util.List<CarritoCompra> resultado = carritoService.listarCarritos();
+        assertEquals(1, resultado.size());
+    }
+
+    @Test
+    void actualizarCantidad_itemNoEncontrado_lanzaExcepcion() {
+        // Cubre linea 87: orElseThrow item no encontrado en actualizarCantidad
+        CarritoCompra carrito = carritoActivoVacio(1L, 10L);
+        when(carritoCompraRepository.findById(1L)).thenReturn(java.util.Optional.of(carrito));
+
+        com.ecomarket.pedidos.dto.ActualizarCantidadRequest req = new com.ecomarket.pedidos.dto.ActualizarCantidadRequest();
+        req.setCantidad(3);
+        req.setStockDisponible(10);
+
+        assertThrows(IllegalArgumentException.class,
+                () -> carritoService.actualizarCantidad(1L, 999L, req));
+    }
+
+    @Test
+    void eliminarItem_itemNoEncontrado_lanzaExcepcion() {
+        // Cubre linea 106: orElseThrow item no encontrado en eliminarItem
+        CarritoCompra carrito = carritoActivoVacio(1L, 10L);
+        when(carritoCompraRepository.findById(1L)).thenReturn(java.util.Optional.of(carrito));
+
+        assertThrows(IllegalArgumentException.class,
+                () -> carritoService.eliminarItem(1L, 999L));
+    }
+
+    @Test
+    void toResponse_null_retornaNull() {
+        // Cubre linea 152: toResponse(null)
+        CarritoResponse resp = carritoService.toResponse(null);
+        assertTrue(resp == null);
+    }
 }

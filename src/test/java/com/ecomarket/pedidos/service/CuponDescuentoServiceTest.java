@@ -18,6 +18,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
@@ -28,6 +29,7 @@ class CuponDescuentoServiceTest {
     @Mock private CuponDescuentoRepository cuponDescuentoRepository;
 
     @InjectMocks private CuponDescuentoService cuponDescuentoService;
+
     private CuponDescuento cuponPorcentaje(String codigo, Double valor, Double montoMinimo, Boolean activo) {
         CuponDescuento cupon = new CuponDescuento();
         cupon.setIdCupon(1L);
@@ -51,6 +53,26 @@ class CuponDescuentoServiceTest {
         cupon.setActivo(activo);
         return cupon;
     }
+
+    @Test
+    void crearCupon_OK_guardaYRetorna() {
+        // Cubre linea 22: crearCupon(cuponDescuento)
+        CuponDescuento cupon = new CuponDescuento();
+        cupon.setCodigo("NUEVO");
+        cupon.setTipoDescuento(TipoDescuento.PORCENTAJE);
+        cupon.setValorDescuento(5.0);
+        cupon.setActivo(true);
+        when(cuponDescuentoRepository.save(any(CuponDescuento.class))).thenAnswer(inv -> {
+            CuponDescuento c = inv.getArgument(0);
+            c.setIdCupon(99L);
+            return c;
+        });
+
+        CuponDescuento resultado = cuponDescuentoService.crearCupon(cupon);
+        assertEquals(99L, resultado.getIdCupon());
+        assertEquals("NUEVO", resultado.getCodigo());
+    }
+
     @Test
     void aplicarCupon_porcentaje_OK() {
         String codigo = "ECO10";
@@ -68,6 +90,7 @@ class CuponDescuentoServiceTest {
         assertEquals(9000.0, resultado.getTotalFinal());
         assertEquals("Cupon aplicado correctamente", resultado.getMensaje());
     }
+
     @Test
     void aplicarCupon_montoFijo_OK() {
         String codigo = "VERDE500";
@@ -82,6 +105,7 @@ class CuponDescuentoServiceTest {
         assertEquals(500.0, resultado.getDescuento());
         assertEquals(9500.0, resultado.getTotalFinal());
     }
+
     @Test
     void aplicarCupon_montoFijo_mayorASubtotal_tomaMinimo() {
         String codigo = "GRANDE";
@@ -95,6 +119,7 @@ class CuponDescuentoServiceTest {
         assertEquals(5000.0, resultado.getDescuento());
         assertEquals(0.0, resultado.getTotalFinal());
     }
+
     @Test
     void aplicarCupon_noExiste_lanzaExcepcion() {
         String codigo = "NOEXISTE";
@@ -107,6 +132,7 @@ class CuponDescuentoServiceTest {
         assertTrue(ex.getMessage().toLowerCase().contains("cupon")
                 || ex.getMessage().toLowerCase().contains("codigo"));
     }
+
     @Test
     void aplicarCupon_vencido_lanzaExcepcion() {
         String codigo = "EXPIRADO";
@@ -122,6 +148,7 @@ class CuponDescuentoServiceTest {
         assertTrue(ex.getMessage().toLowerCase().contains("vencid")
                 || ex.getMessage().toLowerCase().contains("expir"));
     }
+
     @Test
     void aplicarCupon_deshabilitado_lanzaExcepcion() {
         String codigo = "DESHABILITADO";
@@ -135,6 +162,43 @@ class CuponDescuentoServiceTest {
 
         assertTrue(ex.getMessage().toLowerCase().contains("cupon")
                 || ex.getMessage().toLowerCase().contains("deshabil"));
+    }
+
+    @Test
+    void aplicarCupon_montoMinimoInsuficiente_lanzaExcepcion() {
+        // Cubre lineas 50-51: subtotal < montoMinimo
+        // Tambien cubre rama null en linea 47: fechaVencimiento == null -> no lanza
+        String codigo = "MINIMO5000";
+        CuponDescuento cupon = cuponPorcentaje(codigo, 10.0, 5000.0, true);
+        cupon.setFechaVencimiento(null); // sin fecha de vencimiento -> cubre rama null
+
+        when(cuponDescuentoRepository.findByCodigoIgnoreCase(eq(codigo)))
+                .thenReturn(Optional.of(cupon));
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> cuponDescuentoService.aplicarCupon(codigo, 3000.0));
+
+        assertTrue(ex.getMessage().toLowerCase().contains("monto"));
+    }
+
+    @Test
+    void aplicarCupon_tipoNoSoportado_lanzaExcepcion() {
+        // Cubre linea 62: tipo descuento no es PORCENTAJE ni MONTO_FIJO
+        String codigo = "RARO";
+        CuponDescuento cupon = new CuponDescuento();
+        cupon.setIdCupon(99L);
+        cupon.setCodigo(codigo);
+        cupon.setTipoDescuento(null); // null -> no entra en ninguno de los if
+        cupon.setValorDescuento(100.0);
+        cupon.setActivo(true);
+
+        when(cuponDescuentoRepository.findByCodigoIgnoreCase(eq(codigo)))
+                .thenReturn(Optional.of(cupon));
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> cuponDescuentoService.aplicarCupon(codigo, 10000.0));
+
+        assertTrue(ex.getMessage().toLowerCase().contains("tipo") || ex.getMessage().toLowerCase().contains("soportad"));
     }
 
     @Test

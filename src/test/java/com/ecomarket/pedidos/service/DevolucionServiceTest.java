@@ -240,4 +240,37 @@ class DevolucionServiceTest {
         com.ecomarket.pedidos.dto.ReclamacionResponse resp = devolucionService.toResponse((Reclamacion) null);
         assertTrue(resp == null);
     }
+
+    @Test
+    void listarDevoluciones_retornaLista() {
+        // Cubre lineas 44-45: listarDevoluciones()
+        Devolucion dev = devolucion(1L, "PENDIENTE");
+        when(devolucionRepository.findAll()).thenReturn(java.util.List.of(dev));
+        java.util.List<Devolucion> resultado = devolucionService.listarDevoluciones();
+        assertEquals(1, resultado.size());
+    }
+
+    @Test
+    void listarReclamaciones_retornaLista() {
+        // Cubre lineas 75-76: listarReclamaciones()
+        Reclamacion rec = new Reclamacion();
+        rec.setIdReclamacion(1L);
+        when(reclamacionRepository.findAll()).thenReturn(java.util.List.of(rec));
+        java.util.List<Reclamacion> resultado = devolucionService.listarReclamaciones();
+        assertEquals(1, resultado.size());
+    }
+
+    @Test
+    void obtenerReclamacion_noExiste_lanza404() {
+        // Cubre linea 82: orElseThrow reclamacion no encontrada
+        Long idRec = 999L;
+        when(reclamacionRepository.findById(idRec)).thenReturn(java.util.Optional.empty());
+
+        org.springframework.web.server.ResponseStatusException ex = assertThrows(
+                org.springframework.web.server.ResponseStatusException.class,
+                () -> devolucionService.obtenerReclamacion(idRec));
+
+        assertEquals(org.springframework.http.HttpStatus.NOT_FOUND, ex.getStatusCode());
+    }
 }
+

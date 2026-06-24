@@ -410,4 +410,60 @@ class VentaServiceTest {
         assertEquals(20L, resp.getIdFactura());
         assertEquals("11-1", resp.getRutCliente());
     }
+
+    @Test
+    void registrarVentaPresencial_stockComoString_OK() {
+        // Cubre linea 82: rama else del instanceof -> Integer.parseInt(stockObj.toString())
+        ItemVentaRequest it = item(100L, "Bolsa", 2, 1000.0);
+        CrearVentaRequest req = ventaRequest(10L, List.of(it));
+        when(ventaRepository.save(any(Venta.class))).thenAnswer(inv -> {
+            Venta v = inv.getArgument(0);
+            v.setIdVenta(77L);
+            return v;
+        });
+        // stockActual viene como String "50" (no instanceof Number)
+        when(inventarioClientService.consultarStock(100L)).thenReturn(Map.of("stockActual", "50"));
+        when(inventarioClientService.descontarStock(anyLong(), anyInt(), anyString())).thenReturn(true);
+
+        Venta resultado = ventaService.registrarVentaPresencial(req);
+        assertEquals(2000.0, resultado.getSubtotal());
+    }
+
+    @Test
+    void registrarVentaPresencial_stockObjetoNulo_stockActualNull_continua() {
+        // Cubre linea 81: rama null del ternario (stockObj == null -> stockActual = null)
+        // El inventario no tiene ni 'stockActual' ni 'stock' -> mapa vacio -> stockActual=null -> no lanza excepcion
+        ItemVentaRequest it = item(100L, "Bolsa", 1, 500.0);
+        CrearVentaRequest req = ventaRequest(10L, List.of(it));
+        when(ventaRepository.save(any(Venta.class))).thenAnswer(inv -> {
+            Venta v = inv.getArgument(0);
+            v.setIdVenta(88L);
+            return v;
+        });
+        // mapa sin ninguna clave -> stockObj queda null -> stockActual = null -> no supera stockActual
+        when(inventarioClientService.consultarStock(100L)).thenReturn(Map.of());
+        when(inventarioClientService.descontarStock(anyLong(), anyInt(), anyString())).thenReturn(true);
+
+        Venta resultado = ventaService.registrarVentaPresencial(req);
+        assertEquals(500.0, resultado.getSubtotal());
+    }
+
+    @Test
+    void actualizarVenta_conDescuento_calculaCorrectamente() {
+        // Cubre linea 123: rama descuento != null -> usa request.getDescuento()
+        Venta existente = new Venta();
+        existente.setIdVenta(1L);
+        when(ventaRepository.findById(1L)).thenReturn(Optional.of(existente));
+        when(ventaRepository.save(any(Venta.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        ItemVentaRequest it = item(1L, "Bolsa", 2, 500.0);
+        CrearVentaRequest req = ventaRequest(10L, List.of(it));
+        req.setDescuento(200.0); // descuento != null -> cubre rama !null del ternario
+
+        Venta resultado = ventaService.actualizarVenta(1L, req);
+        assertEquals(1000.0, resultado.getSubtotal());
+        assertEquals(200.0, resultado.getDescuento());
+        assertEquals(800.0, resultado.getTotal());
+    }
 }
+

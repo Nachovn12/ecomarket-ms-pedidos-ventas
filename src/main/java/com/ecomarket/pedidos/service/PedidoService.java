@@ -65,8 +65,7 @@ public class PedidoService {
         log.info("Validando stock y precios contra MS Inventario y MS Catalogo. idCarrito={}", idCarrito);
         Map<Long, Integer> cantidadesPorProducto = new HashMap<>();
         for (ItemCarrito item : carrito.getItems()) {
-            cantidadesPorProducto.merge(item.getIdProducto(), item.getCantidad(),
-                (a, b) -> (a == null ? 0 : a) + (b == null ? 0 : b));
+            cantidadesPorProducto.merge(item.getIdProducto(), item.getCantidad(), Integer::sum);
         }
         for (Map.Entry<Long, Integer> entry : cantidadesPorProducto.entrySet()) {
             Long idProducto = entry.getKey();

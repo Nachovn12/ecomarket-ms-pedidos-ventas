@@ -3,6 +3,7 @@ package com.ecomarket.pedidos.controller;
 import com.ecomarket.pedidos.dto.AgregarItemCarritoRequest;
 import com.ecomarket.pedidos.dto.ActualizarCantidadRequest;
 import com.ecomarket.pedidos.dto.AplicarCuponRequest;
+import com.ecomarket.pedidos.dto.AplicarCuponResponse;
 import com.ecomarket.pedidos.dto.CarritoResponse;
 import com.ecomarket.pedidos.dto.CrearCarritoRequest;
 import com.ecomarket.pedidos.exception.RecursoNoEncontradoException;
@@ -297,17 +298,23 @@ class CarritoControllerTest {
     }
 
     @Test
-    void testAplicarCupon_carritoNoExistente_retorna404() throws Exception {
-        // Regla: No se puede aplicar cupon a un carrito que no existe.
-        when(carritoService.aplicarCupon(anyLong(), any()))
-                .thenThrow(new RecursoNoEncontradoException("Carrito no encontrado con id: 99"));
+    void testAplicarCupon_cuponValido_retorna200() throws Exception {
+        // Regla: Un cliente con cupón válido recibe descuento en su carrito.
+        AplicarCuponResponse cuponResp = new AplicarCuponResponse();
+        cuponResp.setCodigo("ECO10");
+        cuponResp.setSubtotal(5000.0);
+        cuponResp.setDescuento(500.0);
+        cuponResp.setTotalFinal(4500.0);
+        when(carritoService.aplicarCupon(eq(1L), eq("ECO10"))).thenReturn(cuponResp);
 
         AplicarCuponRequest req = new AplicarCuponRequest();
         req.setCodigo("ECO10");
 
-        mockMvc.perform(post("/api/pedidos/carritos/99/cupon")
+        mockMvc.perform(post("/api/pedidos/carritos/1/cupon")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(req)))
-                .andExpect(status().isNotFound());
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.codigo", is("ECO10")))
+                .andExpect(jsonPath("$.descuento", is(500.0)));
     }
 }

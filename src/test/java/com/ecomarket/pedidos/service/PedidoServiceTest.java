@@ -515,4 +515,77 @@ class PedidoServiceTest {
         assertEquals(10L, resp.getIdPedido());
         assertEquals(5L, resp.getIdCliente());
     }
+
+    @Test
+    void cancelarPedido_noExiste_lanzaExcepcion() {
+        // Cubre linea 185: orElseThrow en cancelarPedido
+        when(pedidoRepository.findById(999L)).thenReturn(Optional.empty());
+        assertThrows(RecursoNoEncontradoException.class,
+                () -> pedidoService.cancelarPedido(999L, "motivo"));
+    }
+
+    @Test
+    void crearDesdeCarrito_stockComoString_OK() {
+        // Cubre linea 84: rama else instanceof (Integer.parseInt) cuando stock viene como String
+        Long idCarrito = 1L;
+        CarritoCompra carrito = carritoActivoConItem(idCarrito, 10L, 100L, "Bolsa", 1, 1990.0);
+        when(carritoCompraRepository.findById(idCarrito)).thenReturn(Optional.of(carrito));
+        // stockActual viene como String -> no instanceof Number -> parseInt
+        when(inventarioClientService.consultarStock(100L)).thenReturn(Map.of("stockActual", "50"));
+        when(catalogoClientService.obtenerProducto(100L)).thenReturn(Map.of("idProducto", 100));
+        when(pedidoRepository.save(any(Pedido.class))).thenAnswer(inv -> {
+            Pedido p = inv.getArgument(0);
+            p.setIdPedido(99L);
+            return p;
+        });
+
+        Pedido p = pedidoService.crearDesdeCarrito(idCarrito, requestBasico());
+        assertNotNull(p);
+    }
+
+    @Test
+    void crearDesdeCarrito_dosItemsMismoProducto_acumulaCantidades() {
+        // Cubre linea 69: lambda en merge() con dos items del mismo producto
+        // Cuando merge se llama con un valor ya existente, ejecuta la funcion (a, b) -> a + b
+        Long idCarrito = 5L;
+        CarritoCompra carrito = new CarritoCompra();
+        carrito.setIdCarrito(idCarrito);
+        carrito.setIdCliente(10L);
+        carrito.setEstado(EstadoCarrito.ACTIVO);
+
+        // 2 items del mismo producto para activar la rama del merge lambda
+        ItemCarrito item1 = new ItemCarrito();
+        item1.setIdProducto(200L);
+        item1.setNombreProducto("Semilla");
+        item1.setCantidad(2);
+        item1.setPrecioUnitario(500.0);
+        item1.recalcularSubtotal();
+
+        ItemCarrito item2 = new ItemCarrito();
+        item2.setIdProducto(200L); // mismo producto
+        item2.setNombreProducto("Semilla");
+        item2.setCantidad(3);
+        item2.setPrecioUnitario(500.0);
+        item2.recalcularSubtotal();
+
+        ArrayList<ItemCarrito> items = new ArrayList<>();
+        items.add(item1);
+        items.add(item2);
+        carrito.setItems(items);
+        carrito.recalcularTotales();
+
+        when(carritoCompraRepository.findById(idCarrito)).thenReturn(Optional.of(carrito));
+        // total solicitado = 5 unidades, stock = 10 -> OK
+        when(inventarioClientService.consultarStock(200L)).thenReturn(Map.of("stockActual", 10));
+        when(catalogoClientService.obtenerProducto(200L)).thenReturn(Map.of("idProducto", 200));
+        when(pedidoRepository.save(any(Pedido.class))).thenAnswer(inv -> {
+            Pedido p = inv.getArgument(0);
+            p.setIdPedido(77L);
+            return p;
+        });
+
+        Pedido p = pedidoService.crearDesdeCarrito(idCarrito, requestBasico());
+        assertNotNull(p);
+        assertEquals(77L, p.getIdPedido());
+    }
 }
