@@ -115,8 +115,10 @@ class CarritoServiceTest {
     }
     @Test
     void agregarItem_stockInsuficiente_lanzaExcepcion() {
+        // Regla de negocio EcoMarket: no se puede agregar más unidades de las disponibles en stock.
+        // Escenario: cliente intenta agregar 10 unidades de jabón artesanal pero solo hay 3 en bodega.
         Long idCarrito = 3L;
-        AgregarItemCarritoRequest req = itemRequest(100L, "Producto limitado", 10, 500.0, 3);
+        AgregarItemCarritoRequest req = itemRequest(300L, "Jabón artesanal de lavanda orgánica", 10, 3990.0, 3);
 
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
                 () -> carritoService.agregarItem(idCarrito, req));
@@ -156,8 +158,10 @@ class CarritoServiceTest {
     }
     @Test
     void agregarItem_carritoNoExiste_lanzaRecursoNoEncontrado() {
+        // Regla de negocio: el carrito debe existir para poder agregar productos.
+        // Escenario: cliente intenta agregar una botella de agua reutilizable a un carrito inexistente.
         Long idCarrito = 999L;
-        AgregarItemCarritoRequest req = itemRequest(100L, "Bolsa", 1, 1000.0, 10);
+        AgregarItemCarritoRequest req = itemRequest(102L, "Botella de agua reutilizable 750ml", 1, 8990.0, 10);
 
         when(carritoCompraRepository.findById(idCarrito)).thenReturn(Optional.empty());
 
@@ -169,6 +173,8 @@ class CarritoServiceTest {
 
     @Test
     void actualizarCantidad_OK() {
+        // Regla de negocio (Acciones del Cliente): el cliente puede modificar cantidades en su carrito.
+        // Escenario: cliente de tienda Lastarria cambia de 1 a 5 unidades de cepillo de bambú.
         Long idCarrito = 1L;
         Long idItem = 10L;
         CarritoCompra carrito = new CarritoCompra();
@@ -177,9 +183,10 @@ class CarritoServiceTest {
         carrito.setEstado(EstadoCarrito.ACTIVO);
         ItemCarrito item = new ItemCarrito();
         item.setIdItem(idItem);
-        item.setIdProducto(100L);
+        item.setIdProducto(201L);
+        item.setNombreProducto("Cepillo de dientes de bambú biodegradable");
         item.setCantidad(1);
-        item.setPrecioUnitario(1000.0);
+        item.setPrecioUnitario(2990.0);
         item.recalcularSubtotal();
         carrito.setItems(new java.util.ArrayList<>(java.util.List.of(item)));
         carrito.recalcularTotales();
@@ -189,16 +196,19 @@ class CarritoServiceTest {
 
         com.ecomarket.pedidos.dto.ActualizarCantidadRequest req = new com.ecomarket.pedidos.dto.ActualizarCantidadRequest();
         req.setCantidad(5);
-        req.setStockDisponible(10);
+        req.setStockDisponible(20);
 
         carritoService.actualizarCantidad(idCarrito, idItem, req);
 
         assertEquals(5, item.getCantidad());
+        assertEquals(14950.0, item.getSubtotal(), 0.01); // 5 × $2.990
         verify(carritoCompraRepository, times(1)).save(any(CarritoCompra.class));
     }
 
     @Test
     void eliminarItem_OK() {
+        // Regla de negocio (Acciones del Cliente): el cliente puede eliminar productos de su carrito.
+        // Escenario: cliente decide quitar una bolsa de tela reutilizable de su carrito antes de finalizar la compra.
         Long idCarrito = 1L;
         Long idItem = 10L;
         CarritoCompra carrito = new CarritoCompra();
@@ -207,9 +217,10 @@ class CarritoServiceTest {
         carrito.setEstado(EstadoCarrito.ACTIVO);
         ItemCarrito item = new ItemCarrito();
         item.setIdItem(idItem);
-        item.setIdProducto(100L);
+        item.setIdProducto(150L);
+        item.setNombreProducto("Bolsa de tela reutilizable estampada");
         item.setCantidad(2);
-        item.setPrecioUnitario(500.0);
+        item.setPrecioUnitario(4990.0);
         item.recalcularSubtotal();
         carrito.setItems(new java.util.ArrayList<>(java.util.List.of(item)));
         carrito.recalcularTotales();
@@ -250,18 +261,20 @@ class CarritoServiceTest {
 
     @Test
     void toResponse_carritoConItems_mapeaTodosLosCampos() {
+        // Regla de negocio (Acciones del Cliente): el cliente aplica cupón de descuento ECO10 en su carrito.
+        // Escenario: carrito con bolsas biodegradables y cupón ECO10 aplicado correctamente.
         CarritoCompra carrito = new CarritoCompra();
         carrito.setIdCarrito(1L);
         carrito.setIdCliente(10L);
         carrito.setEstado(EstadoCarrito.ACTIVO);
-        carrito.setDescuentoAplicado(100.0);
-        carrito.setCodigoCuponAplicado("VERDE10");
+        carrito.setDescuentoAplicado(1990.0);
+        carrito.setCodigoCuponAplicado("ECO10");
         ItemCarrito item = new ItemCarrito();
         item.setIdItem(1L);
         item.setIdProducto(100L);
-        item.setNombreProducto("Bolsa");
+        item.setNombreProducto("Bolsa biodegradable mediana");
         item.setCantidad(2);
-        item.setPrecioUnitario(500.0);
+        item.setPrecioUnitario(1990.0);
         item.recalcularSubtotal();
         carrito.setItems(new java.util.ArrayList<>(java.util.List.of(item)));
         carrito.recalcularTotales();
@@ -271,25 +284,32 @@ class CarritoServiceTest {
         assertEquals(1L, resp.getIdCarrito());
         assertEquals(10L, resp.getIdCliente());
         assertEquals(EstadoCarrito.ACTIVO, resp.getEstado());
-        assertEquals(100.0, resp.getDescuentoAplicado());
-        assertEquals("VERDE10", resp.getCodigoCuponAplicado());
+        assertEquals(1990.0, resp.getDescuentoAplicado());
+        assertEquals("ECO10", resp.getCodigoCuponAplicado());
         assertNotNull(resp.getItems());
         assertEquals(1, resp.getItems().size());
         assertEquals(100L, resp.getItems().get(0).getIdProducto());
+        assertEquals("Bolsa biodegradable mediana", resp.getItems().get(0).getNombreProducto());
     }
 
     @Test
     void listarCarritos_retornaLista() {
-        // Cubre linea 50: listarCarritos()
+        // Regla de negocio (Administrador / Empleado): puede listar todos los carritos activos del sistema.
+        // Escenario: empleado de ventas consulta los carritos activos de la tienda Lastarria.
         CarritoCompra c = carritoActivoVacio(1L, 10L);
         when(carritoCompraRepository.findAll()).thenReturn(java.util.List.of(c));
+
         java.util.List<CarritoCompra> resultado = carritoService.listarCarritos();
+
         assertEquals(1, resultado.size());
+        assertEquals(10L, resultado.get(0).getIdCliente());
+        assertEquals(EstadoCarrito.ACTIVO, resultado.get(0).getEstado());
     }
 
     @Test
     void actualizarCantidad_itemNoEncontrado_lanzaExcepcion() {
-        // Cubre linea 87: orElseThrow item no encontrado en actualizarCantidad
+        // Regla de negocio: no se puede actualizar un item que no existe en el carrito.
+        // Escenario: cliente intenta modificar un item inexistente (borrado previamente por otra sesión).
         CarritoCompra carrito = carritoActivoVacio(1L, 10L);
         when(carritoCompraRepository.findById(1L)).thenReturn(java.util.Optional.of(carrito));
 
@@ -303,7 +323,8 @@ class CarritoServiceTest {
 
     @Test
     void eliminarItem_itemNoEncontrado_lanzaExcepcion() {
-        // Cubre linea 106: orElseThrow item no encontrado en eliminarItem
+        // Regla de negocio: no se puede eliminar un item que no existe en el carrito.
+        // Escenario: item ya fue eliminado en otra sesión; el sistema protege la integridad del carrito.
         CarritoCompra carrito = carritoActivoVacio(1L, 10L);
         when(carritoCompraRepository.findById(1L)).thenReturn(java.util.Optional.of(carrito));
 

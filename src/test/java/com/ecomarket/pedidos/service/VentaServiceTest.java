@@ -296,7 +296,9 @@ class VentaServiceTest {
 
     @Test
     void registrarVentaPresencial_descuentoNegativo_lanzaExcepcion() {
-        ItemVentaRequest it = item(100L, "Bolsa", 2, 1000.0);
+        // Regla de negocio: el descuento no puede ser un valor negativo.
+        // Escenario: empleado de ventas intenta ingresar descuento de -$500 en bolsas de papel craft.
+        ItemVentaRequest it = item(100L, "Bolsa de papel kraft reciclado", 2, 1990.0);
         CrearVentaRequest req = ventaRequest(10L, List.of(it));
         req.setDescuento(-500.0);
 
@@ -307,9 +309,11 @@ class VentaServiceTest {
 
     @Test
     void registrarVentaPresencial_descuentoMayorAlSubtotal_lanzaExcepcion() {
-        ItemVentaRequest it = item(100L, "Bolsa", 2, 1000.0);
+        // Regla de negocio: el descuento no puede ser mayor al subtotal de la venta.
+        // Escenario: empleado intenta aplicar descuento de $10.000 a una venta de $3.980 (2 bolsas).
+        ItemVentaRequest it = item(100L, "Bolsa de papel kraft reciclado", 2, 1990.0);
         CrearVentaRequest req = ventaRequest(10L, List.of(it));
-        req.setDescuento(3000.0);
+        req.setDescuento(10000.0);
 
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, 
             () -> ventaService.registrarVentaPresencial(req));
@@ -318,7 +322,9 @@ class VentaServiceTest {
 
     @Test
     void registrarVentaPresencial_inventarioNulo_lanzaExcepcion() {
-        ItemVentaRequest it = item(100L, "Bolsa", 2, 1000.0);
+        // Regla de negocio: no se puede procesar una venta si el producto no existe en inventario.
+        // Escenario: empleado intenta vender un producto cuyo stock no está registrado en MS Inventario.
+        ItemVentaRequest it = item(100L, "Bolsa biodegradable mediana", 2, 1990.0);
         CrearVentaRequest req = ventaRequest(10L, List.of(it));
         when(ventaRepository.save(any(Venta.class))).thenAnswer(inv -> inv.getArgument(0));
         when(inventarioClientService.consultarStock(100L)).thenReturn(null);
@@ -330,7 +336,9 @@ class VentaServiceTest {
 
     @Test
     void registrarVentaPresencial_stockObjectEnLugarDeStockActual_OK() {
-        ItemVentaRequest it = item(100L, "Bolsa", 2, 1000.0);
+        // Regla de negocio: el sistema tolera diferentes formatos de respuesta del MS Inventario.
+        // Escenario: MS Inventario retorna el campo como 'stock' en lugar de 'stockActual'.
+        ItemVentaRequest it = item(100L, "Bolsa biodegradable mediana", 2, 1990.0);
         CrearVentaRequest req = ventaRequest(10L, List.of(it));
         when(ventaRepository.save(any(Venta.class))).thenAnswer(inv -> {
             Venta v = inv.getArgument(0);
@@ -341,12 +349,14 @@ class VentaServiceTest {
         when(inventarioClientService.descontarStock(anyLong(), anyInt(), anyString())).thenReturn(true);
 
         Venta resultado = ventaService.registrarVentaPresencial(req);
-        assertEquals(2000.0, resultado.getSubtotal());
+        assertEquals(3980.0, resultado.getSubtotal()); // 2 × $1.990 = $3.980
     }
 
     @Test
     void registrarVentaPresencial_descontarStockFalla_soloLogueaAdvertencia() {
-        ItemVentaRequest it = item(100L, "Bolsa", 2, 1000.0);
+        // Regla de negocio: si el descuento de stock falla, la venta igual se registra (no bloquea la operación).
+        // Escenario: la venta se registra exitosamente aunque el MS Inventario no pudo descontar el stock.
+        ItemVentaRequest it = item(100L, "Bolsa biodegradable mediana", 2, 1990.0);
         CrearVentaRequest req = ventaRequest(10L, List.of(it));
         when(ventaRepository.save(any(Venta.class))).thenAnswer(inv -> {
             Venta v = inv.getArgument(0);
@@ -357,23 +367,25 @@ class VentaServiceTest {
         when(inventarioClientService.descontarStock(anyLong(), anyInt(), anyString())).thenReturn(false);
 
         Venta resultado = ventaService.registrarVentaPresencial(req);
-        assertEquals(2000.0, resultado.getSubtotal());
+        assertEquals(3980.0, resultado.getSubtotal()); // 2 × $1.990 = $3.980
         verify(inventarioClientService, times(1)).descontarStock(anyLong(), anyInt(), anyString());
     }
 
     @Test
     void actualizarVenta_descuentoNulo_asumeCero() {
+        // Regla de negocio: si no se especifica descuento en la actualización, se asume $0.
+        // Escenario: empleado actualiza una venta de cepillos de bambú sin cambiar el descuento.
         Venta existente = new Venta();
         existente.setIdVenta(1L);
         when(ventaRepository.findById(1L)).thenReturn(Optional.of(existente));
         when(ventaRepository.save(any(Venta.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        ItemVentaRequest it = item(1L, "", 2, 500.0);
+        ItemVentaRequest it = item(201L, "Cepillo de dientes de bambú biodegradable", 2, 2990.0);
         CrearVentaRequest req = ventaRequest(10L, List.of(it));
         req.setDescuento(null);
 
         Venta resultado = ventaService.actualizarVenta(1L, req);
-        assertEquals(1000.0, resultado.getSubtotal());
+        assertEquals(5980.0, resultado.getSubtotal());
         assertEquals(0.0, resultado.getDescuento());
     }
 
@@ -413,8 +425,9 @@ class VentaServiceTest {
 
     @Test
     void registrarVentaPresencial_stockComoString_OK() {
-        // Cubre linea 82: rama else del instanceof -> Integer.parseInt(stockObj.toString())
-        ItemVentaRequest it = item(100L, "Bolsa", 2, 1000.0);
+        // Regla de negocio: el sistema tolera que MS Inventario retorne stockActual como String.
+        // Escenario: el inventario retorna {"stockActual": "50"} (String) en lugar de Integer.
+        ItemVentaRequest it = item(100L, "Bolsa biodegradable mediana", 2, 1990.0);
         CrearVentaRequest req = ventaRequest(10L, List.of(it));
         when(ventaRepository.save(any(Venta.class))).thenAnswer(inv -> {
             Venta v = inv.getArgument(0);
@@ -426,14 +439,14 @@ class VentaServiceTest {
         when(inventarioClientService.descontarStock(anyLong(), anyInt(), anyString())).thenReturn(true);
 
         Venta resultado = ventaService.registrarVentaPresencial(req);
-        assertEquals(2000.0, resultado.getSubtotal());
+        assertEquals(3980.0, resultado.getSubtotal()); // 2 × $1.990 = $3.980
     }
 
     @Test
     void registrarVentaPresencial_stockObjetoNulo_stockActualNull_continua() {
-        // Cubre linea 81: rama null del ternario (stockObj == null -> stockActual = null)
-        // El inventario no tiene ni 'stockActual' ni 'stock' -> mapa vacio -> stockActual=null -> no lanza excepcion
-        ItemVentaRequest it = item(100L, "Bolsa", 1, 500.0);
+        // Regla de negocio: si el mapa de inventario no contiene la clave de stock, la venta continúa sin validar stock.
+        // Escenario: MS Inventario retorna mapa vacío; el sistema no bloquea la operación de venta.
+        ItemVentaRequest it = item(100L, "Bolsa biodegradable mediana", 1, 1990.0);
         CrearVentaRequest req = ventaRequest(10L, List.of(it));
         when(ventaRepository.save(any(Venta.class))).thenAnswer(inv -> {
             Venta v = inv.getArgument(0);
@@ -445,25 +458,26 @@ class VentaServiceTest {
         when(inventarioClientService.descontarStock(anyLong(), anyInt(), anyString())).thenReturn(true);
 
         Venta resultado = ventaService.registrarVentaPresencial(req);
-        assertEquals(500.0, resultado.getSubtotal());
+        assertEquals(1990.0, resultado.getSubtotal()); // 1 × $1.990 = $1.990
     }
 
     @Test
     void actualizarVenta_conDescuento_calculaCorrectamente() {
-        // Cubre linea 123: rama descuento != null -> usa request.getDescuento()
+        // Regla de negocio (Empleado): puede aplicar descuento al actualizar una venta existente.
+        // Escenario: empleado aplica descuento de $2.000 a una venta de 2 bolsas biodegradables ($3.980 subtotal).
         Venta existente = new Venta();
         existente.setIdVenta(1L);
         when(ventaRepository.findById(1L)).thenReturn(Optional.of(existente));
         when(ventaRepository.save(any(Venta.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        ItemVentaRequest it = item(1L, "Bolsa", 2, 500.0);
+        ItemVentaRequest it = item(100L, "Bolsa biodegradable mediana", 2, 1990.0);
         CrearVentaRequest req = ventaRequest(10L, List.of(it));
-        req.setDescuento(200.0); // descuento != null -> cubre rama !null del ternario
+        req.setDescuento(2000.0); // descuento aprobado por gerente de tienda
 
         Venta resultado = ventaService.actualizarVenta(1L, req);
-        assertEquals(1000.0, resultado.getSubtotal());
-        assertEquals(200.0, resultado.getDescuento());
-        assertEquals(800.0, resultado.getTotal());
+        assertEquals(3980.0, resultado.getSubtotal());
+        assertEquals(2000.0, resultado.getDescuento());
+        assertEquals(1980.0, resultado.getTotal());
     }
 }
 

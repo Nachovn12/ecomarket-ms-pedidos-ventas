@@ -518,19 +518,22 @@ class PedidoServiceTest {
 
     @Test
     void cancelarPedido_noExiste_lanzaExcepcion() {
-        // Cubre linea 185: orElseThrow en cancelarPedido
+        // Regla de negocio: un pedido debe existir para poder cancelarlo.
+        // Escenario: cliente intenta cancelar un pedido con ID inválido (ya eliminado del sistema).
         when(pedidoRepository.findById(999L)).thenReturn(Optional.empty());
         assertThrows(RecursoNoEncontradoException.class,
-                () -> pedidoService.cancelarPedido(999L, "motivo"));
+                () -> pedidoService.cancelarPedido(999L, "Cambio de decisión de compra"));
     }
 
     @Test
     void crearDesdeCarrito_stockComoString_OK() {
-        // Cubre linea 84: rama else instanceof (Integer.parseInt) cuando stock viene como String
+        // Regla de negocio: el sistema tolera que MS Inventario retorne stockActual como String.
+        // Escenario: cliente de tienda Lastarria completa pedido online con bolsas biodegradables;
+        // el MS Inventario responde con stockActual como String en lugar de Integer.
         Long idCarrito = 1L;
-        CarritoCompra carrito = carritoActivoConItem(idCarrito, 10L, 100L, "Bolsa", 1, 1990.0);
+        CarritoCompra carrito = carritoActivoConItem(idCarrito, 10L, 100L,
+                "Bolsa biodegradable mediana", 1, 1990.0);
         when(carritoCompraRepository.findById(idCarrito)).thenReturn(Optional.of(carrito));
-        // stockActual viene como String -> no instanceof Number -> parseInt
         when(inventarioClientService.consultarStock(100L)).thenReturn(Map.of("stockActual", "50"));
         when(catalogoClientService.obtenerProducto(100L)).thenReturn(Map.of("idProducto", 100));
         when(pedidoRepository.save(any(Pedido.class))).thenAnswer(inv -> {
@@ -541,31 +544,33 @@ class PedidoServiceTest {
 
         Pedido p = pedidoService.crearDesdeCarrito(idCarrito, requestBasico());
         assertNotNull(p);
+        assertEquals(99L, p.getIdPedido());
     }
 
     @Test
     void crearDesdeCarrito_dosItemsMismoProducto_acumulaCantidades() {
-        // Cubre linea 69: lambda en merge() con dos items del mismo producto
-        // Cuando merge se llama con un valor ya existente, ejecuta la funcion (a, b) -> a + b
+        // Regla de negocio: cuando el carrito tiene el mismo producto en 2 filas (p.ej. agregado
+        // en dos sesiones distintas), el sistema acumula las cantidades antes de validar stock.
+        // Escenario: cliente tiene 2 filas de "Semilla de chía orgánica" (2+3 uds) en su carrito;
+        // el pedido debe validar que hay stock para 5 unidades en total.
         Long idCarrito = 5L;
         CarritoCompra carrito = new CarritoCompra();
         carrito.setIdCarrito(idCarrito);
         carrito.setIdCliente(10L);
         carrito.setEstado(EstadoCarrito.ACTIVO);
 
-        // 2 items del mismo producto para activar la rama del merge lambda
         ItemCarrito item1 = new ItemCarrito();
         item1.setIdProducto(200L);
-        item1.setNombreProducto("Semilla");
+        item1.setNombreProducto("Semilla de chía orgánica 500g");
         item1.setCantidad(2);
-        item1.setPrecioUnitario(500.0);
+        item1.setPrecioUnitario(3990.0);
         item1.recalcularSubtotal();
 
         ItemCarrito item2 = new ItemCarrito();
-        item2.setIdProducto(200L); // mismo producto
-        item2.setNombreProducto("Semilla");
+        item2.setIdProducto(200L); // mismo producto, agregado en otra sesión
+        item2.setNombreProducto("Semilla de chía orgánica 500g");
         item2.setCantidad(3);
-        item2.setPrecioUnitario(500.0);
+        item2.setPrecioUnitario(3990.0);
         item2.recalcularSubtotal();
 
         ArrayList<ItemCarrito> items = new ArrayList<>();
@@ -575,7 +580,7 @@ class PedidoServiceTest {
         carrito.recalcularTotales();
 
         when(carritoCompraRepository.findById(idCarrito)).thenReturn(Optional.of(carrito));
-        // total solicitado = 5 unidades, stock = 10 -> OK
+        // stock disponible = 10 uds; el pedido requiere 5 (2+3) -> stock suficiente
         when(inventarioClientService.consultarStock(200L)).thenReturn(Map.of("stockActual", 10));
         when(catalogoClientService.obtenerProducto(200L)).thenReturn(Map.of("idProducto", 200));
         when(pedidoRepository.save(any(Pedido.class))).thenAnswer(inv -> {
