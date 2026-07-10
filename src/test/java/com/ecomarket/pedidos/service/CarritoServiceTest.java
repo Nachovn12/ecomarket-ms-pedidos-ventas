@@ -35,6 +35,7 @@ class CarritoServiceTest {
     @Mock private CarritoCompraRepository carritoCompraRepository;
     @Mock private ItemCarritoRepository itemCarritoRepository;
     @Mock private CuponDescuentoService cuponDescuentoService;
+    @Mock private UsuarioClienteService usuarioClienteService;
 
     @InjectMocks private CarritoService carritoService;
     private CarritoCompra carritoActivoVacio(Long idCarrito, Long idCliente) {
@@ -60,6 +61,7 @@ class CarritoServiceTest {
     @Test
     void crearCarrito_OK() {
         Long idCliente = 10L;
+        org.mockito.Mockito.doNothing().when(usuarioClienteService).verificarCliente(idCliente);
         when(carritoCompraRepository.save(any(CarritoCompra.class))).thenAnswer(inv -> {
             CarritoCompra c = inv.getArgument(0);
             c.setIdCarrito(1L);

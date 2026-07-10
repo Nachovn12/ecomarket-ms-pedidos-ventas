@@ -3,6 +3,8 @@ package com.ecomarket.pedidos.service;
 import com.ecomarket.pedidos.dto.ActualizarCantidadRequest;
 import com.ecomarket.pedidos.dto.AgregarItemCarritoRequest;
 import com.ecomarket.pedidos.dto.AplicarCuponResponse;
+import com.ecomarket.pedidos.dto.CarritoResponse;
+import com.ecomarket.pedidos.dto.ItemCarritoResponse;
 import com.ecomarket.pedidos.model.CarritoCompra;
 import com.ecomarket.pedidos.model.EstadoCarrito;
 import com.ecomarket.pedidos.model.ItemCarrito;
@@ -13,8 +15,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import com.ecomarket.pedidos.dto.CarritoResponse;
-import com.ecomarket.pedidos.dto.ItemCarritoResponse;
 
 @Service
 public class CarritoService {
@@ -24,19 +24,24 @@ public class CarritoService {
     private final CarritoCompraRepository carritoCompraRepository;
     private final ItemCarritoRepository itemCarritoRepository;
     private final CuponDescuentoService cuponDescuentoService;
+    private final UsuarioClienteService usuarioClienteService;
 
     public CarritoService(
             CarritoCompraRepository carritoCompraRepository,
             ItemCarritoRepository itemCarritoRepository,
-            CuponDescuentoService cuponDescuentoService
+            CuponDescuentoService cuponDescuentoService,
+            UsuarioClienteService usuarioClienteService
     ) {
         this.carritoCompraRepository = carritoCompraRepository;
         this.itemCarritoRepository = itemCarritoRepository;
         this.cuponDescuentoService = cuponDescuentoService;
+        this.usuarioClienteService = usuarioClienteService;
     }
 
     public CarritoCompra crearCarrito(Long idCliente) {
         log.info("Creando carrito para cliente. idCliente={}", idCliente);
+        // Validar que el cliente exista y esté activo en ms-usuarios-identidad
+        usuarioClienteService.verificarCliente(idCliente);
         CarritoCompra carrito = new CarritoCompra();
         carrito.setIdCliente(idCliente);
         carrito.setEstado(EstadoCarrito.ACTIVO);
@@ -145,7 +150,6 @@ public class CarritoService {
         carrito.setDescuentoAplicado(0.0);
         carrito.setCodigoCuponAplicado(null);
     }
-
 
     public CarritoResponse toResponse(CarritoCompra carrito) {
         if (carrito == null) {

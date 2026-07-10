@@ -10,6 +10,7 @@ import com.ecomarket.pedidos.repository.PedidoRepository;
 import com.ecomarket.pedidos.repository.ReclamacionRepository;
 import com.ecomarket.pedidos.exception.RecursoNoEncontradoException;
 import com.ecomarket.pedidos.exception.StockInsuficienteException;
+import com.ecomarket.pedidos.dto.ClienteDTO;
 import java.util.Map;
 import java.util.HashMap;
 import org.springframework.stereotype.Service;
@@ -29,6 +30,7 @@ public class PedidoService {
     private final com.ecomarket.pedidos.service.CatalogoClientService catalogoClientService;
     private final com.ecomarket.pedidos.service.InventarioClientService inventarioClientService;
     private final com.ecomarket.pedidos.service.LogisticaClientService logisticaClientService;
+    private final UsuarioClienteService usuarioClienteService;
 
     public PedidoService(PedidoRepository pedidoRepository,
                          CarritoCompraRepository carritoCompraRepository,
@@ -36,7 +38,8 @@ public class PedidoService {
                          ReclamacionRepository reclamacionRepository,
                          com.ecomarket.pedidos.service.CatalogoClientService catalogoClientService,
                          com.ecomarket.pedidos.service.InventarioClientService inventarioClientService,
-                         com.ecomarket.pedidos.service.LogisticaClientService logisticaClientService) {
+                         com.ecomarket.pedidos.service.LogisticaClientService logisticaClientService,
+                         UsuarioClienteService usuarioClienteService) {
         this.pedidoRepository = pedidoRepository;
         this.carritoCompraRepository = carritoCompraRepository;
         this.historialPedidoRepository = historialPedidoRepository;
@@ -44,6 +47,7 @@ public class PedidoService {
         this.catalogoClientService = catalogoClientService;
         this.inventarioClientService = inventarioClientService;
         this.logisticaClientService = logisticaClientService;
+        this.usuarioClienteService = usuarioClienteService;
     }
 
     @Transactional
@@ -233,6 +237,17 @@ public class PedidoService {
         PedidoResponse r = new PedidoResponse();
         r.setIdPedido(pedido.getIdPedido());
         r.setIdCliente(pedido.getIdCliente());
+        // Enriquecer con datos del cliente desde ms-usuarios-identidad
+        try {
+            ClienteDTO cliente = usuarioClienteService.obtenerCliente(pedido.getIdCliente());
+            r.setNombreCliente(cliente.getNombre());
+            r.setCorreoCliente(cliente.getCorreo());
+            r.setTelefonoCliente(cliente.getTelefono());
+        } catch (Exception e) {
+            log.warn("No se pudo enriquecer datos del cliente. idCliente={}, motivo={}",
+                    pedido.getIdCliente(), e.getMessage());
+            r.setNombreCliente("Cliente Desconocido");
+        }
         r.setEstado(pedido.getEstado());
         r.setMetodoPago(pedido.getMetodoPago());
         r.setSubtotal(pedido.getSubtotal());

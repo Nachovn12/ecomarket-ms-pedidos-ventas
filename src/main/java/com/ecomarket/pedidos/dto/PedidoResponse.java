@@ -17,6 +17,15 @@ public class PedidoResponse {
     @Schema(description = "ID del cliente", example = "10")
     private Long idCliente;
 
+    @Schema(description = "Nombre completo del cliente", example = "Ignacio Valeria")
+    private String nombreCliente;
+
+    @Schema(description = "Correo electronico del cliente", example = "ignacio.valeria@ecomarket.cl")
+    private String correoCliente;
+
+    @Schema(description = "Telefono del cliente", example = "+56 9 8877 6655")
+    private String telefonoCliente;
+
     @Schema(description = "Estado actual del pedido", example = "PENDIENTE", allowableValues = {"PENDIENTE", "CONFIRMADO", "EN_PREPARACION", "ENVIADO", "ENTREGADO", "CANCELADO"})
     private EstadoPedido estado;
 

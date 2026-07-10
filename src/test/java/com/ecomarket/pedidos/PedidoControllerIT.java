@@ -29,14 +29,21 @@ class PedidoControllerIT {
 
     @MockitoBean private CatalogoClientService catalogoClientService;
     @MockitoBean private InventarioClientService inventarioClientService;
+    @MockitoBean private UsuarioClienteService usuarioClienteService;
 
     private Long idCarritoActivo;
 
     @BeforeEach
     void setUp() {
-                when(inventarioClientService.consultarStock(anyLong())).thenReturn(java.util.Map.of("stockActual", 1000));
+        when(inventarioClientService.consultarStock(anyLong())).thenReturn(java.util.Map.of("stockActual", 1000));
         when(catalogoClientService.obtenerProducto(anyLong())).thenReturn(java.util.Map.of("idProducto", 1, "precio", 1000.0));
         when(inventarioClientService.descontarStock(anyLong(), org.mockito.ArgumentMatchers.anyInt(), org.mockito.ArgumentMatchers.anyString())).thenReturn(true);
+        org.mockito.Mockito.doNothing().when(usuarioClienteService).verificarCliente(anyLong());
+        ClienteDTO dummyCliente = new ClienteDTO();
+        dummyCliente.setNombre("Test Cliente");
+        dummyCliente.setCorreo("test@test.com");
+        dummyCliente.setTelefono("12345678");
+        when(usuarioClienteService.obtenerCliente(anyLong())).thenReturn(dummyCliente);
         CarritoCompra carrito = carritoService.crearCarrito(1L);
         AgregarItemCarritoRequest itemReq = new AgregarItemCarritoRequest();
         itemReq.setIdProducto(10L);
