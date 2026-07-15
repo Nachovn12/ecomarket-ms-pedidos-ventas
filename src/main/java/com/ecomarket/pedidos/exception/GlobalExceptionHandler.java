@@ -55,6 +55,13 @@ public class GlobalExceptionHandler {
         return buildResponse(HttpStatus.CONFLICT, "Conflict", ex.getMessage(), req.getRequestURI());
     }
 
+    @ExceptionHandler(AccesoDenegadoException.class)
+    public ResponseEntity<Map<String, Object>> manejarAccesoDenegado(
+            AccesoDenegadoException ex, HttpServletRequest req) {
+        log.warn("Acceso denegado IDOR/Permiso: {} - path: {}", ex.getMessage(), req.getRequestURI());
+        return buildResponse(HttpStatus.FORBIDDEN, "Forbidden", ex.getMessage(), req.getRequestURI());
+    }
+
     @ExceptionHandler(StockInsuficienteException.class)
     public ResponseEntity<Map<String, Object>> manejarStockInsuficiente(
             StockInsuficienteException ex, HttpServletRequest req) {

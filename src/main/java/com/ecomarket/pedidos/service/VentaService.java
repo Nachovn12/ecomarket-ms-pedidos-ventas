@@ -4,6 +4,7 @@ import com.ecomarket.pedidos.dto.CrearFacturaRequest;
 import com.ecomarket.pedidos.dto.VentaResponse;
 import com.ecomarket.pedidos.dto.FacturaResponse;
 import com.ecomarket.pedidos.dto.CrearVentaRequest;
+import com.ecomarket.pedidos.exception.RecursoNoEncontradoException;
 import com.ecomarket.pedidos.model.Factura;
 import com.ecomarket.pedidos.model.Venta;
 import com.ecomarket.pedidos.repository.FacturaRepository;
@@ -103,7 +104,7 @@ public class VentaService {
     public Venta obtenerVenta(Long idVenta) {
         log.info("Consultando venta. idVenta={}", idVenta);
         return ventaRepository.findById(idVenta)
-                .orElseThrow(() -> new IllegalArgumentException("Venta no encontrada: " + idVenta));
+                .orElseThrow(() -> new RecursoNoEncontradoException("Venta no encontrada: " + idVenta));
     }
 
     @Transactional(readOnly = true)
@@ -174,7 +175,7 @@ public class VentaService {
     public Factura obtenerFactura(Long idFactura) {
         log.info("Consultando factura. idFactura={}", idFactura);
         return facturaRepository.findById(idFactura)
-                .orElseThrow(() -> new IllegalArgumentException("Factura no encontrada: " + idFactura));
+                .orElseThrow(() -> new RecursoNoEncontradoException("Factura no encontrada: " + idFactura));
     }
 
 

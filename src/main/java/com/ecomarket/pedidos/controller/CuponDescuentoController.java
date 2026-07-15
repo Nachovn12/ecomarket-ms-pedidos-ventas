@@ -1,5 +1,6 @@
 package com.ecomarket.pedidos.controller;
 
+import com.ecomarket.pedidos.dto.CuponDescuentoRequestDTO;
 import com.ecomarket.pedidos.dto.CuponDescuentoResponse;
 import com.ecomarket.pedidos.model.CuponDescuento;
 import com.ecomarket.pedidos.service.CuponDescuentoService;
@@ -37,8 +38,8 @@ public class CuponDescuentoController {
             @ApiResponse(responseCode = "409", description = "Codigo de cupon duplicado", content = @Content)
     })
     @PostMapping
-    public ResponseEntity<CuponDescuentoResponse> crearCupon(@Valid @RequestBody CuponDescuento cuponDescuento) {
-        CuponDescuento creado = cuponDescuentoService.crearCupon(cuponDescuento);
+    public ResponseEntity<CuponDescuentoResponse> crearCupon(@Valid @RequestBody CuponDescuentoRequestDTO request) {
+        CuponDescuento creado = cuponDescuentoService.crearCupon(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(cuponDescuentoService.toResponse(creado));
     }
 }

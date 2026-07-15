@@ -1,5 +1,6 @@
 package com.ecomarket.pedidos.service;
 
+import com.ecomarket.pedidos.security.JwtProvider;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,6 +26,7 @@ public class InventarioClientService {
     private static final Logger log = LoggerFactory.getLogger(InventarioClientService.class);
 
     private final RestTemplate restTemplate;
+    private final JwtProvider jwtProvider;
 
     @Value("${ms.inventario.url}")
     private String msInventarioUrl;
@@ -41,6 +43,9 @@ public class InventarioClientService {
         try {
             HttpHeaders headers = new HttpHeaders();
             headers.set("X-Rol-Usuario", "SISTEMA");
+            if (jwtProvider != null) {
+                headers.set("Authorization", "Bearer " + jwtProvider.generarTokenServicio("SISTEMA"));
+            }
             HttpEntity<Void> entity = new HttpEntity<>(headers);
             Map<String, Object> response = restTemplate.exchange(url, HttpMethod.GET, entity, Map.class).getBody();
             log.info("Stock consultado correctamente. idProducto={}", idProducto);
@@ -69,6 +74,9 @@ public class InventarioClientService {
             HttpHeaders headers = new HttpHeaders();
             headers.set("X-Rol-Usuario", "SISTEMA");
             headers.set("Content-Type", "application/json");
+            if (jwtProvider != null) {
+                headers.set("Authorization", "Bearer " + jwtProvider.generarTokenServicio("SISTEMA"));
+            }
             Map<String, Object> body = Map.of(
                     "idProducto", idProducto,
                     "cantidad", -Math.abs(cantidad),
@@ -101,6 +109,9 @@ public class InventarioClientService {
         try {
             HttpHeaders headers = new HttpHeaders();
             headers.set("X-Rol-Usuario", "SISTEMA");
+            if (jwtProvider != null) {
+                headers.set("Authorization", "Bearer " + jwtProvider.generarTokenServicio("SISTEMA"));
+            }
             HttpEntity<Void> entity = new HttpEntity<>(headers);
             @SuppressWarnings("unchecked")
             Map<String, Object> response = restTemplate.exchange(url, HttpMethod.GET, entity, Map.class).getBody();

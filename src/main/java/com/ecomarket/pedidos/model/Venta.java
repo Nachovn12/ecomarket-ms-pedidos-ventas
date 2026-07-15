@@ -53,9 +53,5 @@ public class Venta {
     @PrePersist
     public void prePersist() {
         this.fechaVenta = LocalDateTime.now();
-        if (this.subtotal != null && this.descuento != null) {
-            double baseIva = Math.max(0.0, this.subtotal - this.descuento);
-            this.iva = baseIva * 0.19;
-        }
     }
 }

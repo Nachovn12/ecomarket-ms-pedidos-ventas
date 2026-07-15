@@ -30,7 +30,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 // Tests HTTP del PedidoController. La logica esta en PedidoServiceTest.
-@WebMvcTest(PedidoController.class)
+@WebMvcTest(controllers = PedidoController.class, excludeFilters = @org.springframework.context.annotation.ComponentScan.Filter(type = org.springframework.context.annotation.FilterType.ASSIGNABLE_TYPE, classes = com.ecomarket.pedidos.security.JwtAuthenticationFilter.class))
 class PedidoControllerTest {
 
     @Autowired
@@ -359,5 +359,24 @@ class PedidoControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(1)))
                 .andExpect(jsonPath("$[0].motivo", is("Producto llego aplastado")));
+    }
+
+    @Test
+    void testObtenerPorId_IDOR_ClienteAjeno_retorna403() throws Exception {
+        Pedido p = pedidoMock(1L, 10L, EstadoPedido.PENDIENTE, 1000.0, 190.0, 1000.0);
+        when(pedidoService.obtenerPedido(1L)).thenReturn(p);
+
+        mockMvc.perform(get("/api/pedidos/1")
+                        .header("X-Rol-Usuario", "CLIENTE")
+                        .header("X-Id-Usuario", "99")) // El pedido es del cliente 10
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void testListarTodos_IDOR_Cliente_retorna403() throws Exception {
+        mockMvc.perform(get("/api/pedidos")
+                        .header("X-Rol-Usuario", "CLIENTE")
+                        .header("X-Id-Usuario", "10"))
+                .andExpect(status().isForbidden());
     }
 }

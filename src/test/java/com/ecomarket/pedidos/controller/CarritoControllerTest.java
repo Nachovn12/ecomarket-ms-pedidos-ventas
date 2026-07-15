@@ -33,7 +33,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.mockito.ArgumentMatchers.eq;
 
 // Tests HTTP del CarritoController. La logica esta en CarritoServiceTest.
-@WebMvcTest(CarritoController.class)
+@WebMvcTest(controllers = CarritoController.class, excludeFilters = @org.springframework.context.annotation.ComponentScan.Filter(type = org.springframework.context.annotation.FilterType.ASSIGNABLE_TYPE, classes = com.ecomarket.pedidos.security.JwtAuthenticationFilter.class))
 class CarritoControllerTest {
 
     @Autowired

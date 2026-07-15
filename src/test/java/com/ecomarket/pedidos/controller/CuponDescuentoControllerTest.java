@@ -1,5 +1,6 @@
 package com.ecomarket.pedidos.controller;
 
+import com.ecomarket.pedidos.dto.CuponDescuentoRequestDTO;
 import com.ecomarket.pedidos.dto.CuponDescuentoResponse;
 import com.ecomarket.pedidos.model.CuponDescuento;
 import com.ecomarket.pedidos.model.TipoDescuento;
@@ -24,7 +25,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 // Tests HTTP del CuponDescuentoController. La logica esta en CuponDescuentoServiceTest.
-@WebMvcTest(CuponDescuentoController.class)
+@WebMvcTest(controllers = CuponDescuentoController.class, excludeFilters = @org.springframework.context.annotation.ComponentScan.Filter(type = org.springframework.context.annotation.FilterType.ASSIGNABLE_TYPE, classes = com.ecomarket.pedidos.security.JwtAuthenticationFilter.class))
 class CuponDescuentoControllerTest {
 
     @Autowired
@@ -57,12 +58,18 @@ class CuponDescuentoControllerTest {
     }
     @Test
     void testCrearCupon_OK() throws Exception {
-        CuponDescuento input = cuponMock("ECO10", TipoDescuento.PORCENTAJE, 10.0);
+        CuponDescuentoRequestDTO input = new CuponDescuentoRequestDTO();
+        input.setCodigo("ECO10");
+        input.setTipoDescuento(TipoDescuento.PORCENTAJE);
+        input.setValorDescuento(10.0);
+        input.setFechaVencimiento(LocalDate.now().plusMonths(3));
+        input.setActivo(true);
+
         CuponDescuento guardado = cuponMock("ECO10", TipoDescuento.PORCENTAJE, 10.0);
         guardado.setIdCupon(1L);
         CuponDescuentoResponse resp = cuponResponseMock(1L, "ECO10", TipoDescuento.PORCENTAJE, 10.0);
 
-        when(cuponDescuentoService.crearCupon(any(CuponDescuento.class))).thenReturn(guardado);
+        when(cuponDescuentoService.crearCupon(any(CuponDescuentoRequestDTO.class))).thenReturn(guardado);
         when(cuponDescuentoService.toResponse(guardado)).thenReturn(resp);
 
         mockMvc.perform(post("/api/pedidos/cupones")
@@ -78,9 +85,14 @@ class CuponDescuentoControllerTest {
 
     @Test
     void testCrearCupon_codigoDuplicado_lanza409() throws Exception {
-        CuponDescuento input = cuponMock("DUPLICADO", TipoDescuento.MONTO_FIJO, 500.0);
+        CuponDescuentoRequestDTO input = new CuponDescuentoRequestDTO();
+        input.setCodigo("DUPLICADO");
+        input.setTipoDescuento(TipoDescuento.MONTO_FIJO);
+        input.setValorDescuento(500.0);
+        input.setFechaVencimiento(LocalDate.now().plusMonths(3));
+        input.setActivo(true);
 
-        when(cuponDescuentoService.crearCupon(any(CuponDescuento.class)))
+        when(cuponDescuentoService.crearCupon(any(CuponDescuentoRequestDTO.class)))
                 .thenThrow(new DataIntegrityViolationException("Codigo de cupon duplicado"));
 
         mockMvc.perform(post("/api/pedidos/cupones")

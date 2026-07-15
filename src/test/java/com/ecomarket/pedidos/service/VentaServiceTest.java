@@ -3,6 +3,7 @@ package com.ecomarket.pedidos.service;
 import com.ecomarket.pedidos.dto.CrearFacturaRequest;
 import com.ecomarket.pedidos.dto.CrearVentaRequest;
 import com.ecomarket.pedidos.dto.ItemVentaRequest;
+import com.ecomarket.pedidos.exception.RecursoNoEncontradoException;
 import com.ecomarket.pedidos.model.Factura;
 import com.ecomarket.pedidos.model.MetodoPago;
 import com.ecomarket.pedidos.model.Venta;
@@ -225,8 +226,7 @@ class VentaServiceTest {
     void obtenerVenta_noExistente_lanzaExcepcion() {
         when(ventaRepository.findById(99L)).thenReturn(Optional.empty());
 
-        assertThrows(IllegalArgumentException.class,
-                () -> ventaService.obtenerVenta(99L));
+        assertThrows(RecursoNoEncontradoException.class, () -> ventaService.obtenerVenta(99L));
     }
 
     @Test
@@ -290,8 +290,7 @@ class VentaServiceTest {
     void obtenerFactura_noExistente_lanzaExcepcion() {
         when(facturaRepository.findById(99L)).thenReturn(Optional.empty());
 
-        assertThrows(IllegalArgumentException.class,
-                () -> ventaService.obtenerFactura(99L));
+        assertThrows(RecursoNoEncontradoException.class, () -> ventaService.obtenerFactura(99L));
     }
 
     @Test

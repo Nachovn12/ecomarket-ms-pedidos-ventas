@@ -34,8 +34,8 @@ public class Devolucion {
     @Schema(description = "Motivo de la devolucion", example = "Producto defectuoso")
     private String motivo;
 
-    @Schema(description = "Estado de la devolucion", example = "PENDIENTE", allowableValues = {"PENDIENTE", "APROBADA", "RECHAZADA", "PROCESADA"})
-    private String estado = "PENDIENTE";
+    @Schema(description = "Estado de la devolucion", example = "SOLICITADA", allowableValues = {"SOLICITADA", "APROBADA", "RECHAZADA", "FINALIZADA"})
+    private String estado = "SOLICITADA";
 
     @Schema(description = "Fecha de creacion de la devolucion", example = "2026-06-05T09:00:00", accessMode = Schema.AccessMode.READ_ONLY)
     private LocalDateTime fechaCreacion;

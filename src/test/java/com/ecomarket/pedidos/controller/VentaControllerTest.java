@@ -31,7 +31,7 @@ import static org.mockito.Mockito.doNothing;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 
 // Tests HTTP del VentaController. La logica de venta esta en VentaServiceTest.
-@WebMvcTest(VentaController.class)
+@WebMvcTest(controllers = VentaController.class, excludeFilters = @org.springframework.context.annotation.ComponentScan.Filter(type = org.springframework.context.annotation.FilterType.ASSIGNABLE_TYPE, classes = com.ecomarket.pedidos.security.JwtAuthenticationFilter.class))
 class VentaControllerTest {
 
     @Autowired
@@ -309,5 +309,38 @@ class VentaControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(req)))
                 .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void testObtenerPorId_IDOR_ClienteAjeno_retorna403() throws Exception {
+        Venta v = ventaMock(1L, 10L, 3980.0, 756.2, 3980.0);
+        when(ventaService.obtenerVenta(1L)).thenReturn(v);
+
+        mockMvc.perform(get("/api/ventas/1")
+                        .header("X-Rol-Usuario", "CLIENTE")
+                        .header("X-Id-Usuario", "99")) // Venta del cliente 10
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void testObtenerFactura_IDOR_ClienteAjeno_retorna403() throws Exception {
+        com.ecomarket.pedidos.model.Factura f = new com.ecomarket.pedidos.model.Factura();
+        f.setIdFactura(10L);
+        f.setIdCliente(10L);
+        f.setFolio(1001);
+        when(ventaService.obtenerFactura(10L)).thenReturn(f);
+
+        mockMvc.perform(get("/api/ventas/facturas/10")
+                        .header("X-Rol-Usuario", "CLIENTE")
+                        .header("X-Id-Usuario", "99")) // Factura del cliente 10
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void testListarTodos_IDOR_Cliente_retorna403() throws Exception {
+        mockMvc.perform(get("/api/ventas")
+                        .header("X-Rol-Usuario", "CLIENTE")
+                        .header("X-Id-Usuario", "10"))
+                .andExpect(status().isForbidden());
     }
 }

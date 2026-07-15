@@ -8,6 +8,7 @@ import com.ecomarket.pedidos.model.EstadoPedido;
 import com.ecomarket.pedidos.model.HistorialPedido;
 import com.ecomarket.pedidos.model.Pedido;
 import com.ecomarket.pedidos.model.Reclamacion;
+import com.ecomarket.pedidos.security.IdorValidator;
 import com.ecomarket.pedidos.service.PedidoService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -47,7 +48,12 @@ public class PedidoController {
     @PostMapping("/desde-carrito/{idCarrito}")
     public ResponseEntity<PedidoResponse> crearDesdeCarrito(
             @Parameter(description = "ID del carrito", example = "1", required = true) @PathVariable Long idCarrito,
-            @Valid @RequestBody CrearPedidoRequest request) {
+            @Valid @RequestBody CrearPedidoRequest request,
+            @RequestHeader(value = "X-Rol-Usuario", required = false) String rol,
+            @RequestHeader(value = "X-Id-Usuario", required = false) String idUsuario) {
+        if ("CLIENTE".equalsIgnoreCase(rol)) {
+            IdorValidator.verificarAccesoEntidadCliente(request.getIdCliente(), rol, idUsuario);
+        }
         Pedido pedido = pedidoService.crearDesdeCarrito(idCarrito, request);
         return ResponseEntity.status(HttpStatus.CREATED).body(pedidoService.toResponse(pedido));
     }
@@ -56,7 +62,9 @@ public class PedidoController {
     @ApiResponse(responseCode = "200", description = "Listado de pedidos",
             content = @Content(schema = @Schema(implementation = PedidoResponse.class)))
     @GetMapping
-    public ResponseEntity<List<PedidoResponse>> listarPedidos() {
+    public ResponseEntity<List<PedidoResponse>> listarPedidos(
+            @RequestHeader(value = "X-Rol-Usuario", required = false) String rol) {
+        IdorValidator.verificarNoEsCliente(rol);
         List<PedidoResponse> pedidos = pedidoService.listarPedidos()
                 .stream()
                 .map(pedidoService::toResponse)
@@ -72,8 +80,13 @@ public class PedidoController {
     })
     @GetMapping("/{idPedido}")
     public ResponseEntity<PedidoResponse> obtenerPedido(
-            @Parameter(description = "ID del pedido", example = "1", required = true) @PathVariable Long idPedido) {
+            @Parameter(description = "ID del pedido", example = "1", required = true) @PathVariable Long idPedido,
+            @RequestHeader(value = "X-Rol-Usuario", required = false) String rol,
+            @RequestHeader(value = "X-Id-Usuario", required = false) String idUsuario) {
         Pedido pedido = pedidoService.obtenerPedido(idPedido);
+        if ("CLIENTE".equalsIgnoreCase(rol)) {
+            IdorValidator.verificarAccesoEntidadCliente(pedido.getIdCliente(), rol, idUsuario);
+        }
         return ResponseEntity.ok(pedidoService.toResponse(pedido));
     }
 
@@ -89,7 +102,13 @@ public class PedidoController {
     @PutMapping("/{idPedido}")
     public ResponseEntity<PedidoResponse> actualizarPedido(
             @Parameter(description = "ID del pedido", example = "1", required = true) @PathVariable Long idPedido,
-            @Valid @RequestBody CrearPedidoRequest request) {
+            @Valid @RequestBody CrearPedidoRequest request,
+            @RequestHeader(value = "X-Rol-Usuario", required = false) String rol,
+            @RequestHeader(value = "X-Id-Usuario", required = false) String idUsuario) {
+        if ("CLIENTE".equalsIgnoreCase(rol)) {
+            Pedido existente = pedidoService.obtenerPedido(idPedido);
+            IdorValidator.verificarAccesoEntidadCliente(existente.getIdCliente(), rol, idUsuario);
+        }
         Pedido pedido = pedidoService.actualizarPedido(idPedido, request);
         return ResponseEntity.ok(pedidoService.toResponse(pedido));
     }
@@ -101,7 +120,9 @@ public class PedidoController {
     })
     @DeleteMapping("/{idPedido}")
     public ResponseEntity<Void> eliminarPedido(
-            @Parameter(description = "ID del pedido", example = "1", required = true) @PathVariable Long idPedido) {
+            @Parameter(description = "ID del pedido", example = "1", required = true) @PathVariable Long idPedido,
+            @RequestHeader(value = "X-Rol-Usuario", required = false) String rol) {
+        IdorValidator.verificarNoEsCliente(rol);
         pedidoService.eliminarPedido(idPedido);
         return ResponseEntity.noContent().build();
     }
@@ -110,7 +131,13 @@ public class PedidoController {
     @ApiResponse(responseCode = "200", description = "Estado del pedido")
     @GetMapping("/{idPedido}/estado")
     public ResponseEntity<Map<String, Object>> consultarEstado(
-            @Parameter(description = "ID del pedido", example = "1", required = true) @PathVariable Long idPedido) {
+            @Parameter(description = "ID del pedido", example = "1", required = true) @PathVariable Long idPedido,
+            @RequestHeader(value = "X-Rol-Usuario", required = false) String rol,
+            @RequestHeader(value = "X-Id-Usuario", required = false) String idUsuario) {
+        if ("CLIENTE".equalsIgnoreCase(rol)) {
+            Pedido pedido = pedidoService.obtenerPedido(idPedido);
+            IdorValidator.verificarAccesoEntidadCliente(pedido.getIdCliente(), rol, idUsuario);
+        }
         EstadoPedido estado = pedidoService.consultarEstado(idPedido);
         return ResponseEntity.ok(Map.of(
                 "idPedido", idPedido,
@@ -123,7 +150,13 @@ public class PedidoController {
             content = @Content(schema = @Schema(implementation = HistorialPedido.class)))
     @GetMapping("/{idPedido}/historial")
     public ResponseEntity<List<HistorialPedido>> listarHistorial(
-            @Parameter(description = "ID del pedido", example = "1", required = true) @PathVariable Long idPedido) {
+            @Parameter(description = "ID del pedido", example = "1", required = true) @PathVariable Long idPedido,
+            @RequestHeader(value = "X-Rol-Usuario", required = false) String rol,
+            @RequestHeader(value = "X-Id-Usuario", required = false) String idUsuario) {
+        if ("CLIENTE".equalsIgnoreCase(rol)) {
+            Pedido pedido = pedidoService.obtenerPedido(idPedido);
+            IdorValidator.verificarAccesoEntidadCliente(pedido.getIdCliente(), rol, idUsuario);
+        }
         return ResponseEntity.ok(pedidoService.listarHistorialPedido(idPedido));
     }
 
@@ -132,7 +165,12 @@ public class PedidoController {
             content = @Content(schema = @Schema(implementation = PedidoResponse.class)))
     @GetMapping("/clientes/{idCliente}/historial")
     public ResponseEntity<List<PedidoResponse>> historialCliente(
-            @Parameter(description = "ID del cliente", example = "10", required = true) @PathVariable Long idCliente) {
+            @Parameter(description = "ID del cliente", example = "10", required = true) @PathVariable Long idCliente,
+            @RequestHeader(value = "X-Rol-Usuario", required = false) String rol,
+            @RequestHeader(value = "X-Id-Usuario", required = false) String idUsuario) {
+        if ("CLIENTE".equalsIgnoreCase(rol)) {
+            IdorValidator.verificarAccesoEntidadCliente(idCliente, rol, idUsuario);
+        }
         List<PedidoResponse> pedidos = pedidoService.historialCliente(idCliente)
                 .stream()
                 .map(pedidoService::toResponse)
@@ -151,7 +189,13 @@ public class PedidoController {
     @PatchMapping("/{idPedido}/cancelar")
     public ResponseEntity<PedidoResponse> cancelarPedido(
             @Parameter(description = "ID del pedido", example = "1", required = true) @PathVariable Long idPedido,
-            @RequestBody(required = false) CancelarPedidoRequest request) {
+            @RequestBody(required = false) CancelarPedidoRequest request,
+            @RequestHeader(value = "X-Rol-Usuario", required = false) String rol,
+            @RequestHeader(value = "X-Id-Usuario", required = false) String idUsuario) {
+        if ("CLIENTE".equalsIgnoreCase(rol)) {
+            Pedido existente = pedidoService.obtenerPedido(idPedido);
+            IdorValidator.verificarAccesoEntidadCliente(existente.getIdCliente(), rol, idUsuario);
+        }
         String motivo = request != null ? request.getMotivo() : null;
         Pedido pedido = pedidoService.cancelarPedido(idPedido, motivo);
         return ResponseEntity.ok(pedidoService.toResponse(pedido));
@@ -167,7 +211,13 @@ public class PedidoController {
     @PostMapping("/{idPedido}/reclamaciones")
     public ResponseEntity<Reclamacion> crearReclamacion(
             @Parameter(description = "ID del pedido", example = "1", required = true) @PathVariable Long idPedido,
-            @Valid @RequestBody CrearReclamacionRequest request) {
+            @Valid @RequestBody CrearReclamacionRequest request,
+            @RequestHeader(value = "X-Rol-Usuario", required = false) String rol,
+            @RequestHeader(value = "X-Id-Usuario", required = false) String idUsuario) {
+        if ("CLIENTE".equalsIgnoreCase(rol)) {
+            Pedido existente = pedidoService.obtenerPedido(idPedido);
+            IdorValidator.verificarAccesoEntidadCliente(existente.getIdCliente(), rol, idUsuario);
+        }
         Reclamacion reclamacion = pedidoService.crearReclamacionPorPedido(idPedido, request);
         return ResponseEntity.status(HttpStatus.CREATED).body(reclamacion);
     }
@@ -177,7 +227,13 @@ public class PedidoController {
             content = @Content(schema = @Schema(implementation = Reclamacion.class)))
     @GetMapping("/{idPedido}/reclamaciones")
     public ResponseEntity<List<Reclamacion>> listarReclamaciones(
-            @Parameter(description = "ID del pedido", example = "1", required = true) @PathVariable Long idPedido) {
+            @Parameter(description = "ID del pedido", example = "1", required = true) @PathVariable Long idPedido,
+            @RequestHeader(value = "X-Rol-Usuario", required = false) String rol,
+            @RequestHeader(value = "X-Id-Usuario", required = false) String idUsuario) {
+        if ("CLIENTE".equalsIgnoreCase(rol)) {
+            Pedido pedido = pedidoService.obtenerPedido(idPedido);
+            IdorValidator.verificarAccesoEntidadCliente(pedido.getIdCliente(), rol, idUsuario);
+        }
         return ResponseEntity.ok(pedidoService.listarReclamacionesPorPedido(idPedido));
     }
 }

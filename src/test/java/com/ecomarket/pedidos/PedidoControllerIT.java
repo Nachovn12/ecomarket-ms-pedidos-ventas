@@ -223,7 +223,7 @@ class PedidoControllerIT {
         devReq.setIdVenta(venta.getIdVenta());
         devReq.setMotivo("Producto no corresponde");
         Devolucion devolucion = devolucionService.crearDevolucion(devReq);
-        assertThrows(org.springframework.web.server.ResponseStatusException.class, () ->
+        assertThrows(IllegalArgumentException.class, () ->
                 devolucionService.actualizarEstadoDevolucion(
                         devolucion.getIdDevolucion(), "INVALIDO"));
     }
@@ -245,7 +245,7 @@ class PedidoControllerIT {
         devReq.setIdVenta(venta.getIdVenta());
         devReq.setMotivo("Producto con falla");
         Devolucion devolucion = devolucionService.crearDevolucion(devReq);
-        assertThrows(org.springframework.web.server.ResponseStatusException.class, () ->
+        assertThrows(IllegalArgumentException.class, () ->
                 devolucionService.actualizarEstadoDevolucion(
                         devolucion.getIdDevolucion(), null));
     }
@@ -277,14 +277,14 @@ class PedidoControllerIT {
         recReq.setMotivo("Pedido con problema");
         recReq.setDescripcion("ReclamaciÃƒÂ³n de prueba");
         Reclamacion reclamacion = devolucionService.crearReclamacion(recReq);
-        assertThrows(org.springframework.web.server.ResponseStatusException.class, () ->
+        assertThrows(IllegalArgumentException.class, () ->
                 devolucionService.actualizarEstadoReclamacion(
                         reclamacion.getIdReclamacion(), "NO_EXISTE"));
     }
 
     @Test
     void obtenerDevolucionInexistenteDebeFallar() {
-        assertThrows(org.springframework.web.server.ResponseStatusException.class, () ->
+        assertThrows(com.ecomarket.pedidos.exception.RecursoNoEncontradoException.class, () ->
                 devolucionService.obtenerDevolucion(999999L));
     }
 }

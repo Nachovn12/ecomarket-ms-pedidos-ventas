@@ -31,7 +31,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 // Pruebas unitarias de DevolucionController con @WebMvcTest y @MockitoBean
 // Mockea DevolucionService y valida solo la capa HTTP
 // La logica de negocio ya esta cubierta por DevolucionServiceTest
-@WebMvcTest(DevolucionController.class)
+@WebMvcTest(controllers = DevolucionController.class, excludeFilters = @org.springframework.context.annotation.ComponentScan.Filter(type = org.springframework.context.annotation.FilterType.ASSIGNABLE_TYPE, classes = com.ecomarket.pedidos.security.JwtAuthenticationFilter.class))
 class DevolucionControllerTest {
 
     @Autowired
@@ -277,5 +277,37 @@ class DevolucionControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(req)))
                 .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void testObtenerDevolucion_IDOR_ClienteAjeno_retorna403() throws Exception {
+        Devolucion d = devolucionMock(1L, "APROBADA");
+        when(devolucionService.obtenerDevolucion(1L)).thenReturn(d);
+
+        mockMvc.perform(get("/api/pedidos/devoluciones/1")
+                        .header("X-Rol-Usuario", "CLIENTE")
+                        .header("X-Id-Usuario", "99")) // Devolución de cliente 10
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void testObtenerReclamacion_IDOR_ClienteAjeno_retorna403() throws Exception {
+        com.ecomarket.pedidos.model.Reclamacion rec = new com.ecomarket.pedidos.model.Reclamacion();
+        rec.setIdReclamacion(1L);
+        rec.setIdCliente(10L);
+        when(devolucionService.obtenerReclamacion(1L)).thenReturn(rec);
+
+        mockMvc.perform(get("/api/pedidos/reclamaciones/1")
+                        .header("X-Rol-Usuario", "CLIENTE")
+                        .header("X-Id-Usuario", "99")) // Reclamación de cliente 10
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void testListarDevoluciones_IDOR_Cliente_retorna403() throws Exception {
+        mockMvc.perform(get("/api/pedidos/devoluciones")
+                        .header("X-Rol-Usuario", "CLIENTE")
+                        .header("X-Id-Usuario", "10"))
+                .andExpect(status().isForbidden());
     }
 }

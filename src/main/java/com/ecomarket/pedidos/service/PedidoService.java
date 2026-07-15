@@ -9,6 +9,7 @@ import com.ecomarket.pedidos.repository.HistorialPedidoRepository;
 import com.ecomarket.pedidos.repository.PedidoRepository;
 import com.ecomarket.pedidos.repository.ReclamacionRepository;
 import com.ecomarket.pedidos.exception.RecursoNoEncontradoException;
+import com.ecomarket.pedidos.exception.ConflictoNegocioException;
 import com.ecomarket.pedidos.exception.StockInsuficienteException;
 import com.ecomarket.pedidos.dto.ClienteDTO;
 import java.util.Map;
@@ -153,7 +154,7 @@ public class PedidoService {
     public Pedido actualizarPedido(Long idPedido, CrearPedidoRequest request) {
         Pedido pedido = obtenerPedido(idPedido);
         if (pedido.getEstado() == EstadoPedido.CANCELADO || pedido.getEstado() == EstadoPedido.ENTREGADO) {
-            throw new IllegalArgumentException(
+            throw new ConflictoNegocioException(
                     "No se puede modificar un pedido en estado " + pedido.getEstado());
         }
         pedido.setMetodoPago(request.getMetodoPago());
@@ -173,7 +174,7 @@ public class PedidoService {
     @Transactional(readOnly = true)
     public EstadoPedido consultarEstado(Long idPedido) {
         return pedidoRepository.findById(idPedido)
-                .orElseThrow(() -> new IllegalArgumentException("Pedido no encontrado: " + idPedido))
+                .orElseThrow(() -> new RecursoNoEncontradoException("Pedido no encontrado: " + idPedido))
                 .getEstado();
     }
 

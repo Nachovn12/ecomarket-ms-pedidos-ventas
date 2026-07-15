@@ -6,13 +6,12 @@ import com.ecomarket.pedidos.model.Devolucion;
 import com.ecomarket.pedidos.model.Reclamacion;
 import com.ecomarket.pedidos.dto.DevolucionResponse;
 import com.ecomarket.pedidos.dto.ReclamacionResponse;
+import com.ecomarket.pedidos.exception.RecursoNoEncontradoException;
 import com.ecomarket.pedidos.repository.DevolucionRepository;
 import com.ecomarket.pedidos.repository.ReclamacionRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 
@@ -48,8 +47,8 @@ public class DevolucionService {
     public Devolucion obtenerDevolucion(Long id) {
         log.info("Buscando devolución con id {}", id);
         return devolucionRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(
-                        HttpStatus.NOT_FOUND, "Devolución no encontrada: " + id));
+                .orElseThrow(() -> new RecursoNoEncontradoException(
+                        "Devolución no encontrada: " + id));
     }
 
     public Devolucion actualizarEstadoDevolucion(Long id, String estado) {
@@ -79,8 +78,8 @@ public class DevolucionService {
     public Reclamacion obtenerReclamacion(Long id) {
         log.info("Buscando reclamación con id {}", id);
         return reclamacionRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(
-                        HttpStatus.NOT_FOUND, "Reclamación no encontrada: " + id));
+                .orElseThrow(() -> new RecursoNoEncontradoException(
+                        "Reclamación no encontrada: " + id));
     }
 
     public Reclamacion actualizarEstadoReclamacion(Long id, String estado) {
@@ -93,28 +92,28 @@ public class DevolucionService {
 
     private String normalizarEstadoDevolucion(String estado) {
         if (estado == null || estado.isBlank()) {
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST, "El estado de devolución es obligatorio");
+            throw new IllegalArgumentException(
+                    "El estado de devolución es obligatorio");
         }
         String estadoNormalizado = estado.trim().toUpperCase();
         List<String> permitidos = List.of("SOLICITADA", "APROBADA", "RECHAZADA", "FINALIZADA");
         if (!permitidos.contains(estadoNormalizado)) {
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST, "Estado de devolución inválido");
+            throw new IllegalArgumentException(
+                    "Estado de devolución inválido. Permitidos: SOLICITADA, APROBADA, RECHAZADA, FINALIZADA");
         }
         return estadoNormalizado;
     }
 
     private String normalizarEstadoReclamacion(String estado) {
         if (estado == null || estado.isBlank()) {
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST, "El estado de reclamación es obligatorio");
+            throw new IllegalArgumentException(
+                    "El estado de reclamación es obligatorio");
         }
         String estadoNormalizado = estado.trim().toUpperCase();
         List<String> permitidos = List.of("ABIERTA", "EN_REVISION", "RESUELTA", "CERRADA");
         if (!permitidos.contains(estadoNormalizado)) {
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST, "Estado de reclamación inválido");
+            throw new IllegalArgumentException(
+                    "Estado de reclamación inválido. Permitidos: ABIERTA, EN_REVISION, RESUELTA, CERRADA");
         }
         return estadoNormalizado;
     }

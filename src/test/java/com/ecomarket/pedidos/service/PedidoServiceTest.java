@@ -1,6 +1,8 @@
 package com.ecomarket.pedidos.service;
 
 import com.ecomarket.pedidos.dto.CrearPedidoRequest;
+import com.ecomarket.pedidos.dto.CrearReclamacionRequest;
+import com.ecomarket.pedidos.exception.ConflictoNegocioException;
 import com.ecomarket.pedidos.exception.RecursoNoEncontradoException;
 import com.ecomarket.pedidos.model.CarritoCompra;
 import com.ecomarket.pedidos.model.EstadoCarrito;
@@ -299,7 +301,7 @@ class PedidoServiceTest {
         cancelado.setEstado(EstadoPedido.CANCELADO);
         when(pedidoRepository.findById(1L)).thenReturn(Optional.of(cancelado));
 
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(ConflictoNegocioException.class,
                 () -> pedidoService.actualizarPedido(1L, requestBasico()));
 
         verify(pedidoRepository, never()).save(any(Pedido.class));
@@ -332,7 +334,7 @@ class PedidoServiceTest {
     void consultarEstado_pedidoNoExistente_lanzaExcepcion() {
         when(pedidoRepository.findById(99L)).thenReturn(Optional.empty());
 
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(RecursoNoEncontradoException.class,
                 () -> pedidoService.consultarEstado(99L));
     }
 
@@ -488,7 +490,7 @@ class PedidoServiceTest {
         p.setEstado(EstadoPedido.ENTREGADO);
         when(pedidoRepository.findById(1L)).thenReturn(Optional.of(p));
 
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+        ConflictoNegocioException ex = assertThrows(ConflictoNegocioException.class,
                 () -> pedidoService.actualizarPedido(1L, requestBasico()));
         assertTrue(ex.getMessage().contains("ENTREGADO"));
     }

@@ -1,9 +1,14 @@
 package com.ecomarket.pedidos.service;
 
 import com.ecomarket.pedidos.dto.ClienteDTO;
+import com.ecomarket.pedidos.security.JwtProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.ResourceAccessException;
@@ -20,11 +25,15 @@ public class UsuarioClienteService {
 
     private final RestTemplate restTemplate;
     private final String usuariosServiceUrl;
+    private final JwtProvider jwtProvider;
 
+    @Autowired
     public UsuarioClienteService(RestTemplate restTemplate,
-                                 @Value("${ms.usuarios.url:http://localhost:8083}") String usuariosServiceUrl) {
+                                 @Value("${ms.usuarios.url:http://localhost:8083}") String usuariosServiceUrl,
+                                 JwtProvider jwtProvider) {
         this.restTemplate = restTemplate;
         this.usuariosServiceUrl = usuariosServiceUrl;
+        this.jwtProvider = jwtProvider;
     }
 
     /**
@@ -36,7 +45,13 @@ public class UsuarioClienteService {
         String url = usuariosServiceUrl + "/api/usuarios/clientes/" + idCliente + "/perfil";
         log.info("Consultando cliente en MS Usuarios. idCliente={}, url={}", idCliente, url);
         try {
-            ClienteDTO cliente = restTemplate.getForObject(url, ClienteDTO.class);
+            HttpHeaders headers = new HttpHeaders();
+            headers.set("X-Rol-Usuario", "SISTEMA");
+            if (jwtProvider != null) {
+                headers.set("Authorization", "Bearer " + jwtProvider.generarTokenServicio("SISTEMA"));
+            }
+            HttpEntity<Void> entity = new HttpEntity<>(headers);
+            ClienteDTO cliente = restTemplate.exchange(url, HttpMethod.GET, entity, ClienteDTO.class).getBody();
             log.info("Cliente obtenido correctamente. idCliente={}", idCliente);
             return cliente;
         } catch (HttpClientErrorException.NotFound e) {

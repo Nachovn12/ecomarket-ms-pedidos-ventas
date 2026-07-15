@@ -8,6 +8,7 @@ import com.ecomarket.pedidos.dto.DevolucionResponse;
 import com.ecomarket.pedidos.dto.ReclamacionResponse;
 import com.ecomarket.pedidos.model.Devolucion;
 import com.ecomarket.pedidos.model.Reclamacion;
+import com.ecomarket.pedidos.security.IdorValidator;
 import com.ecomarket.pedidos.service.DevolucionService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -44,7 +45,12 @@ public class DevolucionController {
     @PostMapping("/ventas-pedido/{idVenta}/devoluciones")
     public ResponseEntity<DevolucionResponse> crearDevolucion(
             @Parameter(description = "ID de la venta", example = "1", required = true) @PathVariable Long idVenta,
-            @Valid @RequestBody CrearDevolucionRequest request) {
+            @Valid @RequestBody CrearDevolucionRequest request,
+            @RequestHeader(value = "X-Rol-Usuario", required = false) String rol,
+            @RequestHeader(value = "X-Id-Usuario", required = false) String idUsuario) {
+        if ("CLIENTE".equalsIgnoreCase(rol)) {
+            IdorValidator.verificarAccesoEntidadCliente(request.getIdCliente(), rol, idUsuario);
+        }
         request.setIdVenta(idVenta);
         Devolucion devolucion = devolucionService.crearDevolucion(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(devolucionService.toResponse(devolucion));
@@ -54,7 +60,9 @@ public class DevolucionController {
     @ApiResponse(responseCode = "200", description = "Listado de devoluciones",
             content = @Content(schema = @Schema(implementation = DevolucionResponse.class)))
     @GetMapping("/devoluciones")
-    public ResponseEntity<List<DevolucionResponse>> listarDevoluciones() {
+    public ResponseEntity<List<DevolucionResponse>> listarDevoluciones(
+            @RequestHeader(value = "X-Rol-Usuario", required = false) String rol) {
+        IdorValidator.verificarNoEsCliente(rol);
         List<DevolucionResponse> devoluciones = devolucionService.listarDevoluciones()
                 .stream()
                 .map(devolucionService::toResponse)
@@ -70,8 +78,11 @@ public class DevolucionController {
     })
     @GetMapping("/devoluciones/{id}")
     public ResponseEntity<DevolucionResponse> obtenerDevolucion(
-            @Parameter(description = "ID de la devolucion", example = "1", required = true) @PathVariable Long id) {
+            @Parameter(description = "ID de la devolucion", example = "1", required = true) @PathVariable Long id,
+            @RequestHeader(value = "X-Rol-Usuario", required = false) String rol,
+            @RequestHeader(value = "X-Id-Usuario", required = false) String idUsuario) {
         Devolucion devolucion = devolucionService.obtenerDevolucion(id);
+        IdorValidator.verificarAccesoEntidadCliente(devolucion.getIdCliente(), rol, idUsuario);
         return ResponseEntity.ok(devolucionService.toResponse(devolucion));
     }
 
@@ -85,7 +96,9 @@ public class DevolucionController {
     @PatchMapping("/devoluciones/{id}/estado")
     public ResponseEntity<DevolucionResponse> actualizarEstadoDevolucion(
             @Parameter(description = "ID de la devolucion", example = "1", required = true) @PathVariable Long id,
-            @Valid @RequestBody ActualizarEstadoDevolucionRequest request) {
+            @Valid @RequestBody ActualizarEstadoDevolucionRequest request,
+            @RequestHeader(value = "X-Rol-Usuario", required = false) String rol) {
+        IdorValidator.verificarNoEsCliente(rol);
         Devolucion devolucion = devolucionService.actualizarEstadoDevolucion(id, request.getEstado());
         return ResponseEntity.ok(devolucionService.toResponse(devolucion));
     }
@@ -98,7 +111,12 @@ public class DevolucionController {
     })
     @PostMapping("/reclamaciones")
     public ResponseEntity<ReclamacionResponse> crearReclamacion(
-            @Valid @RequestBody CrearReclamacionRequest request) {
+            @Valid @RequestBody CrearReclamacionRequest request,
+            @RequestHeader(value = "X-Rol-Usuario", required = false) String rol,
+            @RequestHeader(value = "X-Id-Usuario", required = false) String idUsuario) {
+        if ("CLIENTE".equalsIgnoreCase(rol)) {
+            IdorValidator.verificarAccesoEntidadCliente(request.getIdCliente(), rol, idUsuario);
+        }
         Reclamacion reclamacion = devolucionService.crearReclamacion(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(devolucionService.toResponse(reclamacion));
     }
@@ -107,7 +125,9 @@ public class DevolucionController {
     @ApiResponse(responseCode = "200", description = "Listado de reclamaciones",
             content = @Content(schema = @Schema(implementation = ReclamacionResponse.class)))
     @GetMapping("/reclamaciones")
-    public ResponseEntity<List<ReclamacionResponse>> listarReclamaciones() {
+    public ResponseEntity<List<ReclamacionResponse>> listarReclamaciones(
+            @RequestHeader(value = "X-Rol-Usuario", required = false) String rol) {
+        IdorValidator.verificarNoEsCliente(rol);
         List<ReclamacionResponse> reclamaciones = devolucionService.listarReclamaciones()
                 .stream()
                 .map(devolucionService::toResponse)
@@ -123,8 +143,11 @@ public class DevolucionController {
     })
     @GetMapping("/reclamaciones/{id}")
     public ResponseEntity<ReclamacionResponse> obtenerReclamacion(
-            @Parameter(description = "ID de la reclamacion", example = "1", required = true) @PathVariable Long id) {
+            @Parameter(description = "ID de la reclamacion", example = "1", required = true) @PathVariable Long id,
+            @RequestHeader(value = "X-Rol-Usuario", required = false) String rol,
+            @RequestHeader(value = "X-Id-Usuario", required = false) String idUsuario) {
         Reclamacion reclamacion = devolucionService.obtenerReclamacion(id);
+        IdorValidator.verificarAccesoEntidadCliente(reclamacion.getIdCliente(), rol, idUsuario);
         return ResponseEntity.ok(devolucionService.toResponse(reclamacion));
     }
 
@@ -138,7 +161,9 @@ public class DevolucionController {
     @PatchMapping("/reclamaciones/{id}/estado")
     public ResponseEntity<ReclamacionResponse> actualizarEstadoReclamacion(
             @Parameter(description = "ID de la reclamacion", example = "1", required = true) @PathVariable Long id,
-            @Valid @RequestBody ActualizarEstadoReclamacionRequest request) {
+            @Valid @RequestBody ActualizarEstadoReclamacionRequest request,
+            @RequestHeader(value = "X-Rol-Usuario", required = false) String rol) {
+        IdorValidator.verificarNoEsCliente(rol);
         Reclamacion reclamacion = devolucionService.actualizarEstadoReclamacion(id, request.getEstado());
         return ResponseEntity.ok(devolucionService.toResponse(reclamacion));
     }

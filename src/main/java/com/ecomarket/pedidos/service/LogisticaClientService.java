@@ -1,5 +1,6 @@
 package com.ecomarket.pedidos.service;
 
+import com.ecomarket.pedidos.security.JwtProvider;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,8 +27,9 @@ public class LogisticaClientService {
     private static final Logger log = LoggerFactory.getLogger(LogisticaClientService.class);
 
     private final RestTemplate restTemplate;
+    private final JwtProvider jwtProvider;
 
-    @Value("")
+    @Value("${ms.logistica.url}")
     private String msLogisticaUrl;
 
     /**
@@ -43,6 +45,9 @@ public class LogisticaClientService {
             HttpHeaders headers = new HttpHeaders();
             headers.set("X-Rol-Usuario", "SISTEMA");
             headers.set("Content-Type", "application/json");
+            if (jwtProvider != null) {
+                headers.set("Authorization", "Bearer " + jwtProvider.generarTokenServicio("SISTEMA"));
+            }
             Map<String, Object> body = Map.of(
                     "idPedido", idPedido,
                     "origen", origen != null ? origen : "Centro de distribucion EcoMarket",
@@ -77,6 +82,9 @@ public class LogisticaClientService {
         try {
             HttpHeaders headers = new HttpHeaders();
             headers.set("X-Rol-Usuario", "SISTEMA");
+            if (jwtProvider != null) {
+                headers.set("Authorization", "Bearer " + jwtProvider.generarTokenServicio("SISTEMA"));
+            }
             HttpEntity<Void> entity = new HttpEntity<>(headers);
             @SuppressWarnings("unchecked")
             Map<String, Object> response = restTemplate.exchange(url, HttpMethod.GET, entity, Map.class).getBody();

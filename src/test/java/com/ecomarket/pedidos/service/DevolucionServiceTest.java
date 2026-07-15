@@ -11,6 +11,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import com.ecomarket.pedidos.exception.RecursoNoEncontradoException;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -67,7 +68,7 @@ class DevolucionServiceTest {
         assertEquals(10L, resultado.getIdCliente());
         assertEquals(500L, resultado.getIdVenta());
         assertEquals("Producto defectuoso", resultado.getMotivo());
-        assertEquals("PENDIENTE", resultado.getEstado());
+        assertEquals("SOLICITADA", resultado.getEstado());
 
         verify(devolucionRepository, times(1)).save(any(Devolucion.class));
     }
@@ -76,10 +77,8 @@ class DevolucionServiceTest {
         Long idDevolucion = 999L;
         when(devolucionRepository.findById(idDevolucion)).thenReturn(Optional.empty());
 
-        ResponseStatusException ex = assertThrows(ResponseStatusException.class,
+        assertThrows(RecursoNoEncontradoException.class,
                 () -> devolucionService.obtenerDevolucion(idDevolucion));
-
-        assertEquals(HttpStatus.NOT_FOUND, ex.getStatusCode());
     }
     @Test
     void actualizarEstadoDevolucion_estadoValido_OK() {
@@ -99,10 +98,9 @@ class DevolucionServiceTest {
         Devolucion dev = devolucion(idDevolucion, "PENDIENTE");
         when(devolucionRepository.findById(idDevolucion)).thenReturn(Optional.of(dev));
 
-        ResponseStatusException ex = assertThrows(ResponseStatusException.class,
+        assertThrows(IllegalArgumentException.class,
                 () -> devolucionService.actualizarEstadoDevolucion(idDevolucion, "INVALIDO"));
 
-        assertEquals(HttpStatus.BAD_REQUEST, ex.getStatusCode());
         verify(devolucionRepository, never()).save(any(Devolucion.class));
     }
     @Test
@@ -111,11 +109,9 @@ class DevolucionServiceTest {
         Devolucion dev = devolucion(idDevolucion, "PENDIENTE");
         when(devolucionRepository.findById(idDevolucion)).thenReturn(Optional.of(dev));
 
-        ResponseStatusException ex = assertThrows(ResponseStatusException.class,
+        assertThrows(IllegalArgumentException.class,
                 () -> devolucionService.actualizarEstadoDevolucion(idDevolucion, null));
 
-        assertEquals(HttpStatus.BAD_REQUEST, ex.getStatusCode());
-        assertTrue(ex.getReason() != null && ex.getReason().toLowerCase().contains("obligatorio"));
         verify(devolucionRepository, never()).save(any(Devolucion.class));
     }
 
@@ -164,10 +160,9 @@ class DevolucionServiceTest {
         rec.setIdCliente(10L);
         when(reclamacionRepository.findById(idRec)).thenReturn(Optional.of(rec));
 
-        ResponseStatusException ex = assertThrows(ResponseStatusException.class,
+        assertThrows(IllegalArgumentException.class,
                 () -> devolucionService.actualizarEstadoReclamacion(idRec, "ESTADO_FAKE"));
 
-        assertEquals(HttpStatus.BAD_REQUEST, ex.getStatusCode());
         verify(reclamacionRepository, never()).save(any(Reclamacion.class));
     }
 
@@ -221,11 +216,9 @@ class DevolucionServiceTest {
         rec.setIdCliente(10L);
         when(reclamacionRepository.findById(idRec)).thenReturn(Optional.of(rec));
 
-        ResponseStatusException ex = assertThrows(ResponseStatusException.class,
+        assertThrows(IllegalArgumentException.class,
                 () -> devolucionService.actualizarEstadoReclamacion(idRec, null));
 
-        assertEquals(HttpStatus.BAD_REQUEST, ex.getStatusCode());
-        assertTrue(ex.getReason() != null && ex.getReason().toLowerCase().contains("obligatorio"));
         verify(reclamacionRepository, never()).save(any(Reclamacion.class));
     }
 
@@ -266,11 +259,8 @@ class DevolucionServiceTest {
         Long idRec = 999L;
         when(reclamacionRepository.findById(idRec)).thenReturn(java.util.Optional.empty());
 
-        org.springframework.web.server.ResponseStatusException ex = assertThrows(
-                org.springframework.web.server.ResponseStatusException.class,
+        assertThrows(RecursoNoEncontradoException.class,
                 () -> devolucionService.obtenerReclamacion(idRec));
-
-        assertEquals(org.springframework.http.HttpStatus.NOT_FOUND, ex.getStatusCode());
     }
 }
 

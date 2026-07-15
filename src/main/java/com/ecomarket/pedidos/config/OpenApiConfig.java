@@ -25,7 +25,7 @@ public class OpenApiConfig {
                 .info(new Info()
                         .title("MS Pedidos y Ventas API")
                         .version("1.0.0")
-                        .description("API del microservicio de Pedidos y Ventas. Gestiona carritos, pedidos, ventas, pagos, cupones, devoluciones y facturación.")
+                        .description("API del microservicio de Pedidos y Ventas. Gestiona carritos, pedidos, ventas, pagos, cupones, devoluciones y facturaciÃ³n.")
                         .contact(new Contact()
                                 .name("Equipo EcoMarket SPA")
                                 .email("ecomarket@duocuc.cl")
@@ -35,6 +35,13 @@ public class OpenApiConfig {
                                 .url("https://www.duoc.cl")))
                 .servers(List.of(
                         new Server().url("http://localhost:8086").description("Servidor local"),
-                        new Server().url("http://localhost:8081").description("API Gateway")));
+                        new Server().url("http://localhost:8081").description("API Gateway")))
+                .components(new io.swagger.v3.oas.models.Components()
+                        .addSecuritySchemes("bearerAuth", new io.swagger.v3.oas.models.security.SecurityScheme()
+                                .type(io.swagger.v3.oas.models.security.SecurityScheme.Type.HTTP)
+                                .scheme("bearer")
+                                .bearerFormat("JWT")))
+                .addSecurityItem(new io.swagger.v3.oas.models.security.SecurityRequirement().addList("bearerAuth"));
     }
 }
+
